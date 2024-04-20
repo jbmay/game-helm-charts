@@ -110,5 +110,6 @@ entries:
           name: Logan Saso
       name: factorio
       urls:
+        - https://github.com/loganintech/helm-charts/releases/download/factorio-1.2.7/factorio-1.2.7.tgz
         - https://github.com/loganintech/helm-charts/releases/download/factorio-1.2.6/factorio-1.2.6.tgz
-      version: 1.2.6
+      version: 1.2.7
