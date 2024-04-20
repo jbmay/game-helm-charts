@@ -47,22 +47,28 @@ nodeSelector: {}
 ## You have to expose factorio on a NodePort and map a port between 30000 and 32767, but the native port is 34197. So you have always to specify the port in factorio.
 ## The best way ist to define a ClusterIP service and define one or more externalIPs. Of course this IPs must be available on the node the factorio pod runs on!
 service:
-  type: NodePort
-  port: 31497
   ## If you are able to map an external IP, set it here
   # externalIPs:
-  #  - "192.168.0.1"
-  #  - "192.168.0.2"
-  #
-  #
-  ## If you use "type: NodePort" set the port to a value you like in the range of 30000-32767. Leave it blank for a random port
-  # nodePort: ""
+  #  - "192.168.0.1" # This would be an IP on a local network, if that's all you can get
+  #  - "78.32.13.9" # This is more likely what you'd see on a public network
+
   ## Examples:
   ## NodePort setup
+  type: NodePort
+  port: 31497
+  ## set the port to a value you like in the range of 30000-32767. Leave it blank for a random port
+  # nodePort: ""
+
+  ## Host networking setup
+  ## This is the most limiting setup, using the networking of the k8s host.
+  ## Whatever port the server uses (34197) is what will be used
+  ## If you want to have multiple servers running on the same host, use NodePorts instead
+  #hostNetwork: true
 
   ## ClusterIp setup
   # ClusterIP:
   #   port: 34197
+
   ## LoadBalancer setup
   # type: LoadBalancer
   # externalTrafficPolicy: Cluster
