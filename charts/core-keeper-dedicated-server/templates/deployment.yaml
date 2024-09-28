@@ -36,37 +36,31 @@ spec:
               value: {{ .Values.corekeeper.config.worldSeed | quote }}
             - name: WORLD_MODE
               value: {{ template "core-keeper-dedicated-server.difficulty" }}
-            - name: GAME_ID
-              value: {{ .Values.corekeeper.config.gameID | quote }}
             - name: DATA_PATH
               value: "/home/steam/core-keeper-data"
             - name: MAX_PLAYERS
               value: {{ .Values.corekeeper.config.maxPlayers | quote }}
-            {{if .Values.corekeeper.config.discord.enabled }}
+            {{- if .Values.corekeeper.config.gameID }}
+            - name: GAME_ID
+              value: {{ .Values.corekeeper.config.gameID | quote }}
+            {{- end}}
+            {{- if .Values.corekeeper.config.discord.enabled }}
             - name: DISCORD
               value: "1"
             - name: DISCORD_HOOK
               value: {{ .Values.corekeeper.config.discord.webhook | quote }}
             - name: DISCORD_PRINTF_STR
               value: {{ .Values.corekeeper.config.discord.printFormat | quote }}
-            {{else}}
-            {{end}}
+            {{- else}}
+            {{- end}}
             - name: SEASON
               value: {{ .Values.corekeeper.config.seasonOverride | quote }}
-            - name: SERVER_IP
-              value: {{ .Values.corekeeper.config.serverIP | quote }}
-            - name: SERVER_PORT
-              value: {{ .Values.corekeeper.config.serverGamePort | quote }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           tty: {{ .Values.corekeeper.tty }}
           stdin: {{ .Values.corekeeper.stdin }}
-          ports:
-            - name: server
-              containerPort: {{ .Values.corekeeper.config.serverGamePort }}
-              protocol: UDP
           volumeMounts:
           - name: data
             mountPath: /home/steam/core-keeper-data

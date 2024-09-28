@@ -124,5 +124,6 @@ entries:
           name: Logan Saso
       name: corekeeper
       urls:
+        - https://github.com/loganintech/helm-charts/releases/download/core-keeper-dedicated-server-0.0.2/core-keeper-dedicated-server-0.0.2.tgz
         - https://github.com/loganintech/helm-charts/releases/download/core-keeper-dedicated-server-0.0.1/core-keeper-dedicated-server-0.0.1.tgz
-      version: 0.0.1
+      version: 0.0.2

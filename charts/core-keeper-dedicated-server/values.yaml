@@ -42,8 +42,6 @@ corekeeper:
       printFormat: "%s"
     seasonOverride: "-1"
     # Overrides current season by setting to any of None (0), Easter (1), Halloween (2), Christmas (3), Valentine (4), Anniversary (5), CherryBlossom (6), LunarNewYear(7). -1 is default setting where it is set depending on system date.
-    serverIP: 0.0.0.0
-    serverGamePort: 2875
 
 
 resources: {}

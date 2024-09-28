@@ -73,3 +73,7 @@ Convert difficulty string into the value
 {{- end -}}
 {{- end -}}
 
+
+{{- if not (or (eq (len .Values.corekeeper.config.gameID) 0) (eq (len .Values.corekeeper.config.gameID) 28)) }}
+{{- fail "the GameID must be either 0 or exactly 28 characters long." }}
+{{- end }}
