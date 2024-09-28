@@ -56,3 +56,20 @@ Create the name of the service account to use
 {{- end -}}
 
 
+{{/*
+Convert difficulty string into the value
+*/}}
+{{- define "core-keeper-dedicated-server.difficulty" -}}
+{{- if eq .Values.corekeeper.config.difficulty "normal" -}}
+    "0"
+{{- else if eq .Values.corekeeper.config.difficulty "hard" -}}
+    "1"
+{{- else if eq .Values.corekeeper.config.difficulty "creative" -}}
+    "2"
+{{- else if eq .Values.corekeeper.config.difficulty "casual" -}}
+    "3"
+{{- else -}}
+    "0" {{/* default to normal */}}
+{{- end -}}
+{{- end -}}
+

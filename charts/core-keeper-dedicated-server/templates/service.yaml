@@ -6,22 +6,22 @@ metadata:
 {{ include "core-keeper-dedicated-server.labels" . | indent 4 }}
   annotations:
     metallb.universe.tf/allow-shared-ip: {{ include "core-keeper-dedicated-server.fullname" . }}
-{{- if .Values.core-keeper-dedicated-server.service.annotations }}
-{{ toYaml .Values.core-keeper-dedicated-server.service.annotations | indent 4 }}
+{{- if .Values.corekeeper.service.annotations }}
+{{ toYaml .Values.corekeeper.service.annotations | indent 4 }}
 {{- end }}
 spec:
-  type: {{ .Values.core-keeper-dedicated-server.service.type }}
-  {{- if .Values.core-keeper-dedicated-server.service.externalTrafficPolicy }}
-  externalTrafficPolicy: {{ .Values.core-keeper-dedicated-server.service.externalTrafficPolicy }}
-  {{- end }}
-  {{- if .Values.core-keeper-dedicated-server.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.core-keeper-dedicated-server.service.loadBalancerIP }}
+  type: {{ .Values.corekeeper.service.type }}
+  {{- if .Values.corekeeper.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ .Values.corekeeper.service.externalTrafficPolicy }}
   {{- end }}
   ports:
-    - port: {{ .Values.core-keeper-dedicated-server.service.port }}
+    - name: server
+      port: {{ .Values.corekeeper.service.port }}
       targetPort: server
-      protocol: TCP
-      name: server
+      protocol: UDP
+    {{- if .Values.corekeeper.service.nodePort }}
+      nodePort: {{ .Values.corekeeper.service.nodePort }}
+    {{- end }}
   selector:
     app.kubernetes.io/name: {{ include "core-keeper-dedicated-server.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

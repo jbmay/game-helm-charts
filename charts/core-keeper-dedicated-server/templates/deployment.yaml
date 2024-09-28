@@ -28,37 +28,74 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           env:
-            - name: WORLD_FILENAME
-              value: {{ include "core-keeper-dedicated-server.worldfile" . }}
+            - name: WORLD_INDEX
+              value: {{ .Values.corekeeper.config.worldIndex | quote }}
+            - name: WORLD_NAME
+              value: {{ .Values.corekeeper.config.worldName | quote }}
+            - name: WORLD_SEED
+              value: {{ .Values.corekeeper.config.worldSeed | quote }}
+            - name: WORLD_MODE
+              value: {{ template "core-keeper-dedicated-server.difficulty" }}
+            - name: GAME_ID
+              value: {{ .Values.corekeeper.config.gameID | quote }}
+            - name: DATA_PATH
+              value: "/home/steam/core-keeper-data"
+            - name: MAX_PLAYERS
+              value: {{ .Values.corekeeper.config.maxPlayers | quote }}
+            {{if .Values.corekeeper.config.discord.enabled }}
+            - name: DISCORD
+              value: "1"
+            - name: DISCORD_HOOK
+              value: {{ .Values.corekeeper.config.discord.webhook | quote }}
+            - name: DISCORD_PRINTF_STR
+              value: {{ .Values.corekeeper.config.discord.printFormat | quote }}
+            {{else}}
+            {{end}}
+            - name: SEASON
+              value: {{ .Values.corekeeper.config.seasonOverride | quote }}
+            - name: SERVER_IP
+              value: {{ .Values.corekeeper.config.serverIP | quote }}
+            - name: SERVER_PORT
+              value: {{ .Values.corekeeper.config.serverGamePort | quote }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          tty: {{ .Values.core-keeper-dedicated-server.tty }}
-          stdin: {{ .Values.core-keeper-dedicated-server.stdin }}
+          tty: {{ .Values.corekeeper.tty }}
+          stdin: {{ .Values.corekeeper.stdin }}
           ports:
             - name: server
-              containerPort: 2875
+              containerPort: {{ .Values.corekeeper.config.serverGamePort }}
               protocol: UDP
           volumeMounts:
-          - name: core-keeper-dedicated-server-data
+          - name: data
             mountPath: /home/steam/core-keeper-data
-          - name: core-keeper-dedicated-server-server
+          - name: config
             mountPath: /home/steam/core-keeper-dedicated
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-      - name: core-keeper-dedicated-server-data
-      {{- if .Values.persistence.worlds.enabled }}
+      - name: data
+      {{- if .Values.persistence.data.enabled }}
+        {{- if .Values.persistence.data.existingClaim }}
         persistentVolumeClaim:
-          claimName: {{ template "core-keeper-dedicated-server.fullname" . }}-worlds
+          claimName: {{ .Values.persistence.data.existingClaim  }}
+         {{- else }}
+        persistentVolumeClaim:
+          claimName: {{ template "core-keeper-dedicated-server.fullname" .  }}-data
+        {{- end }}
       {{- else }}
         emptyDir: {}
       {{- end }}
-      - name: core-keeper-dedicated-server-server
+      - name: config
       {{- if .Values.persistence.config.enabled }}
+        {{- if .Values.persistence.config.existingClaim }}
         persistentVolumeClaim:
-          claimName: {{ template "core-keeper-dedicated-server.fullname" .  }}-config
+          claimName: {{ .Values.persistence.config.existingClaim  }}
+        {{- else }}
+        persistentVolumeClaim:
+            claimName: {{ template "core-keeper-dedicated-server.fullname" .  }}-config
+        {{- end }}
       {{- else }}
         emptyDir: {}
       {{- end }}

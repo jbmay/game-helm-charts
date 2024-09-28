@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: arguser/core-keeper-dedicated
+  repository: escaping/core-keeper-dedicated
   tag: latest
   pullPolicy: Always
 
@@ -24,8 +24,27 @@ corekeeper:
   tty: false
   stdin: false
   service:
+    enabled: true
     type: NodePort
-    port:
+    port: 2875
+    nodePort: 0
+
+  config:
+    worldIndex: 0
+    worldName: "Core Keeper Dedicated Server"
+    worldSeed: 0 # Leave as 0 for random seed
+    difficulty: normal # normal, hard, creative, casual
+    gameID: "" # LEave empty for random game ID
+    maxPlayers: 10
+    discord:
+      enabled: false
+      webhook: ""
+      printFormat: "%s"
+    seasonOverride: "-1"
+    # Overrides current season by setting to any of None (0), Easter (1), Halloween (2), Christmas (3), Valentine (4), Anniversary (5), CherryBlossom (6), LunarNewYear(7). -1 is default setting where it is set depending on system date.
+    serverIP: 0.0.0.0
+    serverGamePort: 2875
+
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -51,8 +70,13 @@ persistence:
     mountPath: /home/steam/core-keeper-data
     accessMode: ReadWriteOnce
     size: 1Gi
-  server:
+  config:
     enabled: false
     mountPath: /home/steam/core-keeper-dedicated
     accessMode: ReadWriteOnce
     size: 1Gi
+
+#podSecurityContext:
+#  runAsUser: 1000
+#  runAsGroup: 1000
+#  fsGroup: 1000
