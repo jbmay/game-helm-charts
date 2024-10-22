@@ -304,122 +304,182 @@ rcon:
   # rcon port
   port: 30100
 
-## @param map_gen_settings.terrain_segmentation The inverse of water scale in the map generator GUI
-## @param map_gen_settings.water The equivalent to water coverage in the map generator GUI
-## @param map_gen_settings.width Map width in tiles; 0 means infinite
-## @param map_gen_settings.height Map height in tiles; 0 means infinite
-## @param map_gen_settings.starting_area Multiplier for biter free zone radius
-## @param map_gen_settings.peaceful_mode Enable Peaceful mode
-## @param map_gen_settings.autoplace_controls Override default ore, trees and enemy bases frequency, size and richness. Leave empty for default values. Supports including modded ores
-## @param map_gen_settings.cliff_settings.name Override default cliff prototype name
-## @param map_gen_settings.cliff_settings.cliff_elevation_0 Override elevation of first row of cliffs
-## @param map_gen_settings.cliff_settings.cliff_elevation_interval Override elevation difference between successive rows of cliffs
-## @param map_gen_settings.cliff_settings.richness Called cliff continuity in the map generator GUI. 0 will result in no cliffs, 10 will make all cliff rows completely solid
-## @skip map_gen_settings.property_expression_names
-## @extra map_gen_settings.property_expression_names [object] Overrides for property value generators (map type)
-## @skip map_gen_settings.starting_points
-## @extra map_gen_settings.starting_points [array] List of starting points for the map
-## @param map_gen_settings.seed Map RNG Seed
 map_gen_settings:
-  # The inverse of water scale in the map generator GUI.
-  terrain_segmentation: 1
-  #  The equivalent to water coverage in the map generator GUI. Higher coverage means
-  #  more water in larger oceans.
-  #  Water level = 10 * log2(this value)
-  water: 1
   # Width and height of map, in tiles; 0 means infinite
   width: 0
-  # Width and height of map, in tiles; 0 means infinite
   height: 0
-  # Multiplier for biter free zone radius
+
+  # Multiplier for 'biter free zone radius'
   starting_area: 1
   peaceful_mode: false
-  autoplace_controls: {}
-#    coal:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    stone:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    copper-ore:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    iron-ore:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    uranium-ore:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    crude-oil:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    trees:
-#      frequency: 1
-#      size: 1
-#      richness: 1
-#    enemy-base:
-#      frequency: 1
-#      size: 1
-#      richness: 1
+
+  autoplace_controls:
+    coal:
+      frequency: 1
+      size: 1
+      richness: 1
+    stone:
+      frequency: 1
+      size: 1
+      richness: 1
+    copper-ore:
+      frequency: 1
+      size: 1
+      richness: 1
+    iron-ore:
+      frequency: 1
+      size: 1
+      richness: 1
+    uranium-ore:
+      frequency: 1
+      size: 1
+      richness: 1
+    crude-oil:
+      frequency: 1
+      size: 1
+      richness: 1
+    water:
+      frequency: 1
+      size: 1
+    trees:
+      frequency: 1
+      size: 1
+    enemy-base:
+      frequency: 1
+      size: 1
   cliff_settings:
     # Name of the cliff prototype
     name: cliff
     # Elevation of first row of cliffs
     cliff_elevation_0: 10
     # Elevation difference between successive rows of cliffs.
-    # This is inversely proportional to frequency in the map generation GUI. Specifically, when set from the GUI the value is 40 / frequency.
+    # This is inversely proportional to 'frequency' in the map generation GUI. Specifically, when set from the GUI the value is 40 / frequency.
     cliff_elevation_interval: 40
-    # Called cliff continuity in the map generator GUI. 0 will result in no cliffs, 10 will make all cliff rows completely solid
+    # Called 'cliff continuity' in the map generator GUI. 0 will result in no cliffs, 10 will make all cliff rows completely solid
     richness: 1
+
   # Overrides for property value generators (map type)
-  # Leave elevation blank to get normal terrain.
-  # Use ''elevation'': ''0_16-elevation'' to reproduce terrain from 0.16.
-  # Use ''elevation'': ''0_17-island'' to get an island.
+  # Leave 'elevation' blank to get 'normal' terrain.
+  # Use 'elevation': 'elevation_island' to get an island.
   # Moisture and terrain type are also controlled via this.
-  # "control-setting:moisture:frequency:multiplier is the inverse of the moisture scale in the map generator GUI."
-  # "control-setting:moisture:bias is the moisture bias in the map generator GUI."
-  # "control-setting:aux:frequency:multiplier is the inverse of the terrain type scale in the map generator GUI."
-  # "control-setting:aux:bias is the teraain type bias in the map generator GUI."
+  # 'control:moisture:frequency' is the inverse of the 'moisture scale' in the map generator GUI.
+  # 'control:moisture:bias' is the 'moisture bias' in the map generator GUI.
+  # 'control:aux:frequency' is the inverse of the 'terrain type scale' in the map generator GUI.
+  # 'control:aux:bias' is the 'terrain type bias' in the map generator GUI.
   property_expression_names:
-    control-setting:moisture:frequency:multiplier: '1'
-    control-setting:moisture:bias: '0'
-    control-setting:aux:frequency:multiplier: '1'
-    control-setting:aux:bias: '0'
+    control:moisture:frequency: "1"
+    control:moisture:bias: "0"
+    control:aux:frequency: "1"
+    control:aux:bias: "0"
+
   starting_points:
-  - "x": 0
-    "y": 0
+    - { "x": 0, "y": 0 }
+
   # Use null for a random seed, number for a specific seed.
   seed: null
 
-## @param map_settings.difficulty_settings.recipe_difficulty Enable expensive crafting recipe
-## @param map_settings.difficulty_settings.technology_difficulty Enable expensive research
 ## @param map_settings.difficulty_settings.technology_price_multiplier Research cost multiplier
-## @param map_settings.difficulty_settings.research_queue_setting Possibile values: `after-victory`, `always`, `never`
+## @param map_settings.difficulty_settings.spoil_time_modifier Spoil time modifier for items.
 ## @skip map_settings.pollution
 ## @extra map_settings.pollution.enabled Enable pollution. Check values.yaml to know what pollution values you can override
+## @extra map_settings.pollution.diffusion_ratio Ratio of pollution diffused to neighboring chunks per tick.
+## @extra map_settings.pollution.min_to_diffuse Minimum pollution required to diffuse to neighboring chunks.
+## @extra map_settings.pollution.ageing Rate at which pollution ages and decreases in value.
+## @extra map_settings.pollution.expected_max_per_chunk Expected maximum pollution per chunk.
+## @extra map_settings.pollution.min_to_show_per_chunk Minimum pollution required to show per chunk.
+## @extra map_settings.pollution.min_pollution_to_damage_trees Minimum pollution needed to begin damaging trees.
+## @extra map_settings.pollution.pollution_with_max_forest_damage Pollution level at which trees take maximum damage.
+## @extra map_settings.pollution.pollution_per_tree_damage Amount of pollution required to damage a tree.
+## @extra map_settings.pollution.pollution_restored_per_tree_damage Amount of pollution removed by restoring tree damage.
+## @extra map_settings.pollution.max_pollution_to_restore_trees Maximum pollution level where trees can be restored.
+## @extra map_settings.pollution.enemy_attack_pollution_consumption_modifier Modifier affecting how much pollution is consumed during enemy attacks.
 ## @skip map_settings.enemy_evolution
 ## @extra map_settings.enemy_evolution.enabled Enable enemy evolution. Check values.yaml to know what enemy evolution values you can override
+## @extra map_settings.enemy_evolution.time_factor Time factor affecting enemy evolution.
+## @extra map_settings.enemy_evolution.destroy_factor Factor affecting enemy evolution due to destroyed entities.
+## @extra map_settings.enemy_evolution.pollution_factor Factor affecting enemy evolution due to pollution.
 ## @skip map_settings.enemy_expansion
-## @extra map_settings.enemy_expansion.enabled Enable enemy expansion. Check values.yaml to know what enemy expansion values you can override
+## @extra map_settings.enemy_expansion.enabled Enable enemy expansion. Check values.yaml to know what values you can override
+## @extra map_settings.enemy_expansion.max_expansion_distance Maximum distance an enemy can expand.
+## @extra map_settings.enemy_expansion.friendly_base_influence_radius Radius of influence of a friendly base.
+## @extra map_settings.enemy_expansion.enemy_building_influence_radius Radius of influence of an enemy building.
+## @extra map_settings.enemy_expansion.building_coefficient Coefficient affecting expansion influenced by buildings.
+## @extra map_settings.enemy_expansion.other_base_coefficient Coefficient affecting expansion influenced by other bases.
+## @extra map_settings.enemy_expansion.neighbouring_chunk_coefficient Coefficient affecting expansion influenced by neighboring chunks.
+## @extra map_settings.enemy_expansion.neighbouring_base_chunk_coefficient Coefficient affecting expansion influenced by neighboring base chunks.
+## @extra map_settings.enemy_expansion.max_colliding_tiles_coefficient Coefficient affecting expansion influenced by colliding tiles.
+## @extra map_settings.enemy_expansion.settler_group_min_size Minimum size of a settler group.
+## @extra map_settings.enemy_expansion.settler_group_max_size Maximum size of a settler group.
+## @extra map_settings.enemy_expansion.min_expansion_cooldown Minimum cooldown time for expansion (in ticks).
+## @extra map_settings.enemy_expansion.max_expansion_cooldown Maximum cooldown time for expansion (in ticks).
 ## @skip map_settings.unit_group
 ## @extra map_settings.unit_group [object] Override default unit group values. Check values.yaml to know what values you can override
+## @extra map_settings.unit_group.min_group_gathering_time Minimum time for gathering a unit group.
+## @extra map_settings.unit_group.max_group_gathering_time Maximum time for gathering a unit group.
+## @extra map_settings.unit_group.max_wait_time_for_late_members Maximum wait time for late group members.
+## @extra map_settings.unit_group.max_group_radius Maximum radius of a unit group.
+## @extra map_settings.unit_group.min_group_radius Minimum radius of a unit group.
+## @extra map_settings.unit_group.max_member_speedup_when_behind Maximum speedup for a unit group member when lagging behind.
+## @extra map_settings.unit_group.max_member_slowdown_when_ahead Maximum slowdown for a unit group member when ahead.
+## @extra map_settings.unit_group.max_group_slowdown_factor Maximum slowdown factor for a unit group.
+## @extra map_settings.unit_group.max_group_member_fallback_factor Maximum fallback factor for a unit group member.
+## @extra map_settings.unit_group.member_disown_distance Distance at which a member is disowned from the group.
+## @extra map_settings.unit_group.tick_tolerance_when_member_arrives Tick tolerance for when a group member arrives.
+## @extra map_settings.unit_group.max_gathering_unit_groups Maximum number of unit groups that can gather.
+## @extra map_settings.unit_group.max_unit_group_size Maximum size of a unit group.
 ## @skip map_settings.steering
 ## @extra map_settings.steering [object] Override default steering values. Check values.yaml to know what values you can override
+## @extra map_settings.steering.default.radius Radius for default steering behavior.
+## @extra map_settings.steering.default.separation_force Separation force for default steering behavior.
+## @extra map_settings.steering.default.separation_factor Separation factor for default steering behavior.
+## @extra map_settings.steering.default.force_unit_fuzzy_goto_behavior Whether to force fuzzy behavior for default steering.
+## @extra map_settings.steering.moving.radius Radius for moving steering behavior.
+## @extra map_settings.steering.moving.separation_force Separation force for moving steering behavior.
+## @extra map_settings.steering.moving.separation_factor Separation factor for moving steering behavior.
+## @extra map_settings.steering.moving.force_unit_fuzzy_goto_behavior Whether to force fuzzy behavior for moving steering.
 ## @skip map_settings.path_finder
 ## @extra map_settings.path_finder [object] Override default pathfinder values. Check values.yaml to know what values you can override
-## @param map_settings.max_failed_behavior_count If a behavior fails this many times, the enemy (or enemy group) is destroyed. This solves biters stuck within their own base.
+## @extra map_settings.path_finder.fwd2bwd_ratio Forward-to-backward pathfinding ratio.
+## @extra map_settings.path_finder.goal_pressure_ratio Goal pressure ratio for pathfinding.
+## @extra map_settings.path_finder.max_steps_worked_per_tick Maximum steps worked per tick during pathfinding.
+## @extra map_settings.path_finder.max_work_done_per_tick Maximum work done per tick during pathfinding.
+## @extra map_settings.path_finder.use_path_cache Whether to use the pathfinding cache.
+## @extra map_settings.path_finder.short_cache_size Size of the short pathfinding cache.
+## @extra map_settings.path_finder.long_cache_size Size of the long pathfinding cache.
+## @extra map_settings.path_finder.short_cache_min_cacheable_distance Minimum distance for caching short paths.
+## @extra map_settings.path_finder.short_cache_min_algo_steps_to_cache Minimum algorithm steps to cache for short paths.
+## @extra map_settings.path_finder.long_cache_min_cacheable_distance Minimum distance for caching long paths.
+## @extra map_settings.path_finder.cache_max_connect_to_cache_steps_multiplier Maximum steps multiplier for connecting to cached paths.
+## @extra map_settings.path_finder.cache_accept_path_start_distance_ratio Start distance ratio for accepting cached paths.
+## @extra map_settings.path_finder.cache_accept_path_end_distance_ratio End distance ratio for accepting cached paths.
+## @extra map_settings.path_finder.negative_cache_accept_path_start_distance_ratio Start distance ratio for accepting negative cached paths.
+## @extra map_settings.path_finder.negative_cache_accept_path_end_distance_ratio End distance ratio for accepting negative cached paths.
+## @extra map_settings.path_finder.cache_path_start_distance_rating_multiplier Start distance rating multiplier for cached paths.
+## @extra map_settings.path_finder.cache_path_end_distance_rating_multiplier End distance rating multiplier for cached paths.
+## @extra map_settings.path_finder.stale_enemy_with_same_destination_collision_penalty Penalty for stale enemy with the same destination.
+## @extra map_settings.path_finder.ignore_moving_enemy_collision_distance Distance to ignore collision with moving enemies.
+## @extra map_settings.path_finder.enemy_with_different_destination_collision_penalty Penalty for enemy with a different destination collision.
+## @extra map_settings.path_finder.general_entity_collision_penalty General entity collision penalty.
+## @extra map_settings.path_finder.general_entity_subsequent_collision_penalty Penalty for subsequent collisions with the same entity.
+## @extra map_settings.path_finder.extended_collision_penalty Extended penalty for continuous collisions.
+## @extra map_settings.path_finder.max_clients_to_accept_any_new_request Maximum clients to accept any new pathfinding request.
+## @extra map_settings.path_finder.max_clients_to_accept_short_new_request Maximum clients to accept short pathfinding requests.
+## @extra map_settings.path_finder.direct_distance_to_consider_short_request Direct distance to consider a pathfinding request as short.
+## @extra map_settings.path_finder.short_request_max_steps Maximum steps for short pathfinding requests.
+## @extra map_settings.path_finder.short_request_ratio Ratio for handling short pathfinding requests.
+## @extra map_settings.path_finder.min_steps_to_check_path_find_termination Minimum steps before checking for pathfinding termination.
+## @extra map_settings.path_finder.start_to_goal_cost_multiplier_to_terminate_path_find Cost multiplier for terminating pathfinding based on start-to-goal cost.
+## @extra map_settings.path_finder.overload_levels Overload levels affecting pathfinding.
+## @extra map_settings.path_finder.overload_multipliers Overload multipliers affecting pathfinding.
+## @extra map_settings.path_finder.negative_path_cache_delay_interval Delay interval for negative pathfinding cache.
+## @param map_settings.asteroids.spawning_rate Rate at which asteroids spawn.
+## @param map_settings.asteroids.max_ray_portals_expanded_per_tick Maximum number of ray portals expanded per tick.
+## @param map_settings.max_failed_behavior_count Maximum failed behavior count
 map_settings:
   difficulty_settings:
-    recipe_difficulty: 0
-    technology_difficulty: 0
     technology_price_multiplier: 1
-    research_queue_setting: after-victory
+    spoil_time_modifier: 1
+
   pollution:
     enabled: true
     # these are values for 60 ticks (1 simulated second)
@@ -435,19 +495,20 @@ map_settings:
     pollution_restored_per_tree_damage: 10
     max_pollution_to_restore_trees: 20
     enemy_attack_pollution_consumption_modifier: 1
+
   enemy_evolution:
     enabled: true
     time_factor: 0.000004
     destroy_factor: 0.002
     pollution_factor: 0.0000009
+
   enemy_expansion:
     enabled: true
-    min_base_spacing: 3
     max_expansion_distance: 7
     friendly_base_influence_radius: 2
     enemy_building_influence_radius: 2
     building_coefficient: 0.1
-    other_base_coefficient: 2
+    other_base_coefficient: 2.0
     neighbouring_chunk_coefficient: 0.5
     neighbouring_base_chunk_coefficient: 0.4
     max_colliding_tiles_coefficient: 0.9
@@ -455,6 +516,7 @@ map_settings:
     settler_group_max_size: 20
     min_expansion_cooldown: 14400
     max_expansion_cooldown: 216000
+
   unit_group:
     min_group_gathering_time: 3600
     max_group_gathering_time: 36000
@@ -469,6 +531,7 @@ map_settings:
     tick_tolerance_when_member_arrives: 60
     max_gathering_unit_groups: 30
     max_unit_group_size: 200
+
   steering:
     default:
       radius: 1.2
@@ -480,10 +543,11 @@ map_settings:
       separation_force: 0.01
       separation_factor: 3
       force_unit_fuzzy_goto_behavior: false
+
   path_finder:
     fwd2bwd_ratio: 5
     goal_pressure_ratio: 2
-    max_steps_worked_per_tick: 100
+    max_steps_worked_per_tick: 1000
     max_work_done_per_tick: 8000
     use_path_cache: true
     short_cache_size: 5
@@ -510,7 +574,7 @@ map_settings:
     short_request_max_steps: 1000
     short_request_ratio: 0.5
     min_steps_to_check_path_find_termination: 2000
-    start_to_goal_cost_multiplier_to_terminate_path_find: 500
+    start_to_goal_cost_multiplier_to_terminate_path_find: 2000
     overload_levels:
     - 0
     - 100
@@ -520,6 +584,10 @@ map_settings:
     - 3
     - 4
     negative_path_cache_delay_interval: 20
+
+  asteroids:
+    spawning_rate: 1
+    max_ray_portals_expanded_per_tick: 100
   max_failed_behavior_count: 3
 
 ## @param admin_list Admin list

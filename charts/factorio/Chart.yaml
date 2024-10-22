@@ -20,7 +20,7 @@ sources:
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 1.2.7
+version: 1.3.0
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -30,7 +30,7 @@ version: 1.2.7
 maintainers:
   - name: Logan Saso
     email: logansaso@gmail.com
-appVersion: 1.0.0
+appVersion: 2.0.8
 deprecated: false
 
 icon: https://factorio.com/static/img/factorio-wheel.png
