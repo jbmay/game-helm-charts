@@ -2,12 +2,12 @@ name: Publish Helm Charts to GHCR
 
 on:
   push:
-    branches: [main]
+    branches: [gh-pages]
     paths:
       - 'charts/**'
       - '.github/workflows/publish-charts.yml'
   pull_request:
-    branches: [main]
+    branches: [gh-pages]
     paths:
       - 'charts/**'
   workflow_dispatch:
