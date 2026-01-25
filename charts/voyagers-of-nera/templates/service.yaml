@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "voyagers-of-nera.fullname" . }}
+  labels:
+    {{- include "voyagers-of-nera.labels" . | nindent 4 }}
+  {{- with .Values.voyagers.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.voyagers.service.type }}
+  ports:
+    - name: game-tcp
+      port: {{ .Values.voyagers.server.port }}
+      targetPort: {{ .Values.voyagers.server.port }}
+      protocol: TCP
+      {{- if and (eq .Values.voyagers.service.type "NodePort") .Values.voyagers.service.nodePort }}
+      nodePort: {{ .Values.voyagers.service.nodePort }}
+      {{- end }}
+    - name: game-udp
+      port: {{ .Values.voyagers.server.port }}
+      targetPort: {{ .Values.voyagers.server.port }}
+      protocol: UDP
+      {{- if and (eq .Values.voyagers.service.type "NodePort") .Values.voyagers.service.nodePort }}
+      nodePort: {{ .Values.voyagers.service.nodePort }}
+      {{- end }}
+    - name: game2-tcp
+      port: {{ add .Values.voyagers.server.port 1 }}
+      targetPort: {{ add .Values.voyagers.server.port 1 }}
+      protocol: TCP
+      {{- if and (eq .Values.voyagers.service.type "NodePort") .Values.voyagers.service.nodePort }}
+      nodePort: {{ add .Values.voyagers.service.nodePort 1 }}
+      {{- end }}
+    - name: game2-udp
+      port: {{ add .Values.voyagers.server.port 1 }}
+      targetPort: {{ add .Values.voyagers.server.port 1 }}
+      protocol: UDP
+      {{- if and (eq .Values.voyagers.service.type "NodePort") .Values.voyagers.service.nodePort }}
+      nodePort: {{ add .Values.voyagers.service.nodePort 1 }}
+      {{- end }}
+  selector:
+    {{- include "voyagers-of-nera.selectorLabels" . | nindent 4 }}

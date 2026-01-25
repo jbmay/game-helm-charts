@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "starrupture.fullname" . }}
+  labels:
+    {{- include "starrupture.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "starrupture.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "starrupture.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "starrupture.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.starrupture.server.port | quote }}
+            - name: QUERY_PORT
+              value: {{ .Values.starrupture.server.queryPort | quote }}
+            - name: MULTIHOME
+              value: {{ .Values.starrupture.server.multihome | quote }}
+            - name: UPDATE_ON_START
+              value: {{ .Values.starrupture.server.updateOnStart | quote }}
+            - name: VALIDATE_ON_START
+              value: {{ .Values.starrupture.server.validateOnStart | quote }}
+            {{- if .Values.starrupture.server.additionalArgs }}
+            - name: ADDITIONAL_ARGS
+              value: {{ .Values.starrupture.server.additionalArgs | quote }}
+            {{- end }}
+            {{- if .Values.starrupture.session.name }}
+            - name: SESSION_NAME
+              value: {{ .Values.starrupture.session.name | quote }}
+            - name: SAVE_GAME_NAME
+              value: {{ .Values.starrupture.session.saveGameName | default .Values.starrupture.session.name | quote }}
+            - name: SAVE_GAME_INTERVAL
+              value: {{ .Values.starrupture.session.saveInterval | quote }}
+            - name: START_NEW_GAME
+              value: {{ .Values.starrupture.session.startNewGame | quote }}
+            - name: LOAD_SAVED_GAME
+              value: {{ .Values.starrupture.session.loadSavedGame | quote }}
+            {{- end }}
+            {{- if .Values.starrupture.adminPassword }}
+            - name: ADMIN_PASSWORD
+              value: {{ .Values.starrupture.adminPassword | quote }}
+            {{- end }}
+          ports:
+            - name: game-tcp
+              containerPort: {{ .Values.starrupture.server.port }}
+              protocol: TCP
+            - name: game-udp
+              containerPort: {{ .Values.starrupture.server.port }}
+              protocol: UDP
+            - name: query
+              containerPort: {{ .Values.starrupture.server.queryPort }}
+              protocol: UDP
+          volumeMounts:
+            - name: starrupture-data
+              mountPath: {{ .Values.persistence.data.mountPath }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: starrupture-data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.persistence.data.existingClaim }}{{ .Values.persistence.data.existingClaim }}{{- else }}{{ include "starrupture.fullname" . }}-data{{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "voyagers-of-nera.fullname" . }}
+  labels:
+    {{- include "voyagers-of-nera.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "voyagers-of-nera.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "voyagers-of-nera.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "voyagers-of-nera.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SERVER_PORT
+              value: {{ .Values.voyagers.server.port | quote }}
+            - name: UPDATE_ON_START
+              value: {{ .Values.voyagers.server.updateOnStart | quote }}
+            - name: VALIDATE_ON_START
+              value: {{ .Values.voyagers.server.validateOnStart | quote }}
+            - name: ENABLE_LOGGING
+              value: {{ .Values.voyagers.server.enableLogging | quote }}
+            {{- if .Values.voyagers.server.additionalArgs }}
+            - name: ADDITIONAL_ARGS
+              value: {{ .Values.voyagers.server.additionalArgs | quote }}
+            {{- end }}
+            {{- if .Values.voyagers.server.eosOverrideHostIp }}
+            - name: EOS_OVERRIDE_HOST_IP
+              value: {{ .Values.voyagers.server.eosOverrideHostIp | quote }}
+            {{- end }}
+            # Host server settings
+            - name: HOST_SERVER_DISPLAY_NAME
+              value: {{ .Values.voyagers.hostSettings.displayName | quote }}
+            - name: HOST_SERVER_PASSWORD
+              value: {{ .Values.voyagers.hostSettings.password | quote }}
+            - name: MAX_PLAYERS
+              value: {{ .Values.voyagers.hostSettings.maxPlayers | quote }}
+            - name: AUTOSAVE_TIMER_SECONDS
+              value: {{ .Values.voyagers.hostSettings.autosaveTimerSeconds | quote }}
+            # Game settings
+            - name: GATHERING_RATE_MULTIPLIER
+              value: {{ .Values.voyagers.gameSettings.gatheringRateMultiplier | quote }}
+            - name: ENEMY_DAMAGE_MULTIPLIER
+              value: {{ .Values.voyagers.gameSettings.enemyDamageMultiplier | quote }}
+            - name: PLAYER_DAMAGE_MULTIPLIER
+              value: {{ .Values.voyagers.gameSettings.playerDamageMultiplier | quote }}
+            - name: DISABLE_EQUIPMENT_DURABILITY
+              value: {{ .Values.voyagers.gameSettings.disableEquipmentDurability | quote }}
+            - name: DISABLE_DROP_ITEMS_ON_DEATH
+              value: {{ .Values.voyagers.gameSettings.disableDropItemsOnDeath | quote }}
+          ports:
+            - name: game-tcp
+              containerPort: {{ .Values.voyagers.server.port }}
+              protocol: TCP
+            - name: game-udp
+              containerPort: {{ .Values.voyagers.server.port }}
+              protocol: UDP
+            - name: game2-tcp
+              containerPort: {{ add .Values.voyagers.server.port 1 }}
+              protocol: TCP
+            - name: game2-udp
+              containerPort: {{ add .Values.voyagers.server.port 1 }}
+              protocol: UDP
+          volumeMounts:
+            - name: voyagers-data
+              mountPath: {{ .Values.persistence.data.mountPath }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: voyagers-data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ if .Values.persistence.data.existingClaim }}{{ .Values.persistence.data.existingClaim }}{{- else }}{{ include "voyagers-of-nera.fullname" . }}-data{{- end }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

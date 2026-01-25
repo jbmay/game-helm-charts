@@ -1,0 +1,81 @@
+# Default values for voyagers-of-nera.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/loganintech/voyagers-of-nera
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+voyagers:
+  # Server configuration
+  server:
+    # Port for game traffic (uses port and port+1)
+    port: 7777
+    # Update server files on container start
+    updateOnStart: true
+    # Validate all files via SteamCMD (slower but thorough)
+    validateOnStart: false
+    # Enable logging output
+    enableLogging: true
+    # Additional command-line arguments for the server
+    additionalArgs: ""
+    # Override the public IP advertised to Epic Online Services
+    eosOverrideHostIp: ""
+
+  # Host server settings (CustomHostServerUserSettings.ini)
+  hostSettings:
+    displayName: "Voyagers Server"
+    password: ""
+    maxPlayers: 10
+    autosaveTimerSeconds: 300
+
+  # Game settings (CustomGameUserSettings.ini)
+  gameSettings:
+    gatheringRateMultiplier: 1.0
+    enemyDamageMultiplier: 1.0
+    playerDamageMultiplier: 1.0
+    disableEquipmentDurability: false
+    disableDropItemsOnDeath: false
+
+  service:
+    type: NodePort
+    # Node port for game traffic (both TCP and UDP)
+    nodePort: ""
+    annotations: {}
+
+resources:
+  requests:
+    memory: "4Gi"
+    cpu: "1000m"
+  limits:
+    memory: "8Gi"
+    cpu: "2000m"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+persistence:
+  data:
+    enabled: true
+    mountPath: /home/steam/server
+    accessMode: ReadWriteOnce
+    size: 20Gi
+    # existingClaim: ""
+    # storageClass: ""

@@ -1,0 +1,29 @@
+StarRupture Dedicated Server has been deployed!
+
+{{- if .Values.starrupture.session.name }}
+Session Name: {{ .Values.starrupture.session.name }}
+{{- else }}
+WARNING: No session name configured. You'll need to use the in-game Server Manager to start the server.
+Set starrupture.session.name to enable auto-start.
+{{- end }}
+
+{{- if eq .Values.starrupture.service.type "NodePort" }}
+The server is exposed via NodePort. Connect using:
+  - Game Port: {{ .Values.starrupture.service.gameNodePort | default "auto-assigned" }}
+  - Query Port: {{ .Values.starrupture.service.queryNodePort | default "auto-assigned" }}
+
+To get the assigned node ports if auto-assigned:
+  kubectl get svc {{ include "starrupture.fullname" . }} -n {{ .Release.Namespace }} -o jsonpath='{.spec.ports}'
+{{- end }}
+
+IMPORTANT: StarRupture is very RAM hungry and can use ~22GB RAM for larger bases.
+Current memory limit: {{ .Values.resources.limits.memory | default "not set" }}
+
+To view logs:
+  kubectl logs -f deployment/{{ include "starrupture.fullname" . }} -n {{ .Release.Namespace }}
+
+Save files are stored at:
+  {{ .Values.persistence.data.mountPath }}/StarRupture/Saved/SaveGames/
+
+Configuration files are at:
+  {{ .Values.persistence.data.mountPath }}/StarRupture/Saved/Config/WindowsServer/
