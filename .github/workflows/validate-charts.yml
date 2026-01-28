@@ -1,0 +1,97 @@
+name: Validate Helm Charts
+
+on:
+  pull_request:
+    branches: [gh-pages]
+    paths:
+      - 'charts/**'
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: 'Specific chart to validate (leave empty for all)'
+        required: false
+        type: string
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.detect.outputs.charts }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed charts
+        id: detect
+        run: |
+          if [ -n "${{ github.event.inputs.chart }}" ]; then
+            echo "charts=[\"${{ github.event.inputs.chart }}\"]" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '^charts/' | cut -d'/' -f2 | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            if [ "$CHANGED" = "[]" ] || [ -z "$CHANGED" ]; then
+              CHANGED='[]'
+            fi
+            echo "charts=$CHANGED" >> $GITHUB_OUTPUT
+          else
+            # Manual dispatch - validate all charts
+            CHANGED=$(ls -d charts/*/ 2>/dev/null | xargs -n1 basename | jq -R -s -c 'split("\n") | map(select(length > 0))')
+            echo "charts=$CHANGED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Show detected charts
+        run: echo "Validating charts - ${{ steps.detect.outputs.charts }}"
+
+  validate:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.charts != '[]' && needs.detect-changes.outputs.charts != 'null'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ${{ fromJson(needs.detect-changes.outputs.charts) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Lint chart
+        run: |
+          helm lint charts/${{ matrix.chart }}
+
+      - name: Update dependencies
+        run: |
+          cd charts/${{ matrix.chart }}
+          helm dependency update || true
+
+      - name: Template chart
+        run: |
+          cd charts/${{ matrix.chart }}
+          helm template test . --debug
+
+      - name: Check version bump
+        if: github.event_name == 'pull_request'
+        run: |
+          CHART="${{ matrix.chart }}"
+          # Get version from PR
+          PR_VERSION=$(grep '^version:' "charts/$CHART/Chart.yaml" | awk '{print $2}')
+
+          # Get version from gh-pages branch
+          git fetch origin gh-pages
+          BASE_VERSION=$(git show origin/gh-pages:charts/$CHART/Chart.yaml 2>/dev/null | grep '^version:' | awk '{print $2}' || echo "0.0.0")
+
+          echo "Base version: $BASE_VERSION"
+          echo "PR version: $PR_VERSION"
+
+          if [ "$PR_VERSION" = "$BASE_VERSION" ]; then
+            echo "::warning::Chart version unchanged ($PR_VERSION). Bump the version in Chart.yaml to trigger a release."
+          else
+            echo "Version bumped from $BASE_VERSION to $PR_VERSION"
+          fi
