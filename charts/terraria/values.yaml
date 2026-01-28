@@ -4,8 +4,16 @@
 
 replicaCount: 1
 
+# Server type: "tshock" or "vanilla"
+# - tshock: Uses ghcr.io/loganintech/terraria-tshock (full TShock features)
+# - vanilla: Uses ghcr.io/loganintech/terraria-vanilla (pure vanilla server)
+serverType: tshock
+
 image:
-  repository: loganintech/terraria
+  # Default to TShock - override repository based on serverType
+  # For vanilla: ghcr.io/loganintech/terraria-vanilla
+  # For tshock: ghcr.io/loganintech/terraria-tshock
+  repository: ghcr.io/loganintech/terraria-tshock
   tag: latest
   pullPolicy: Always
 
