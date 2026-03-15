@@ -92,7 +92,7 @@ entries:
       name: Logan Saso
     name: starrupture
     urls:
-    - https://github.com/loganintech/helm-charts/releases/download/starrupture-0.1.0.tgz
+    - https://github.com/loganintech/helm-charts/releases/download/starrupture-0.1.0/starrupture-0.1.0.tgz
     version: 0.1.0
   terraria:
   - apiVersion: v1
@@ -107,7 +107,7 @@ entries:
       name: Logan Saso
     name: terraria
     urls:
-    - https://github.com/loganintech/helm-charts/releases/download/terraria-0.7.0.tgz
+    - https://github.com/loganintech/helm-charts/releases/download/terraria-0.7.0/terraria-0.7.0.tgz
     version: 0.7.0
   - apiVersion: v1
     appVersion: latest
@@ -175,6 +175,6 @@ entries:
       name: Logan Saso
     name: voyagers-of-nera
     urls:
-    - https://github.com/loganintech/helm-charts/releases/download/voyagers-of-nera-0.1.0.tgz
+    - https://github.com/loganintech/helm-charts/releases/download/voyagers-of-nera-0.1.0/voyagers-of-nera-0.1.0.tgz
     version: 0.1.0
 generated: "2026-03-15T14:33:41.397926238-07:00"
