@@ -210,21 +210,25 @@ affinity: {}
 persistence:
   worlds:
     enabled: false
+    # existingClaim: ""  # Use an existing PVC instead of creating one
     mountPath: /root/.local/share/Terraria/Worlds
     accessMode: ReadWriteOnce
     size: 1Gi
   config:
     enabled: false
+    # existingClaim: ""
     mountPath: /config
     accessMode: ReadWriteOnce
     size: 1Gi
   plugins:
     enabled: false
+    # existingClaim: ""
     mountPath: /tshock/ServerPlugins
     accessMode: ReadWriteOnce
     size: 1Gi
   logs:
     enabled: false
+    # existingClaim: ""
     mountPath: /tshock/logs
     accessMode: ReadWriteOnce
     size: 1Gi

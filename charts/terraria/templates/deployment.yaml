@@ -27,7 +27,7 @@ spec:
             - -c
             - |
               if [ ! -f /config/config.json ]; then
-                echo {{ toJson .Values.terraria.tshockSettings | quote }} > /config/config.json
+                echo {{ dict "Settings" .Values.terraria.tshockSettings | toJson | quote }} > /config/config.json
               fi
               chmod 644 /config/config.json
           volumeMounts:
@@ -78,8 +78,10 @@ spec:
             {{- if .Values.terraria.env }}
             {{- toYaml .Values.terraria.env | nindent 12 }}
             {{- end }}
+          {{- if .Values.securityContext }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           tty: {{ .Values.terraria.tty }}
@@ -121,28 +123,28 @@ spec:
       - name: terraria-worlds
       {{- if .Values.persistence.worlds.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "terraria.fullname" . }}-worlds
+          claimName: {{ .Values.persistence.worlds.existingClaim | default (printf "%s-worlds" (include "terraria.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
       - name: terraria-config
       {{- if .Values.persistence.config.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "terraria.fullname" .  }}-config
+          claimName: {{ .Values.persistence.config.existingClaim | default (printf "%s-config" (include "terraria.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
       - name: tshock-plugins
       {{- if .Values.persistence.plugins.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "terraria.fullname" .  }}-plugins
+          claimName: {{ .Values.persistence.plugins.existingClaim | default (printf "%s-plugins" (include "terraria.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
       - name: tshock-logs
       {{- if .Values.persistence.logs.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "terraria.fullname" .  }}-logs
+          claimName: {{ .Values.persistence.logs.existingClaim | default (printf "%s-logs" (include "terraria.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
