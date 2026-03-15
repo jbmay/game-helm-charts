@@ -34,24 +34,24 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami || true
           helm repo add bjw-s https://bjw-s-labs.github.io/helm-charts || true
 
-      # This action handles everything:
-      # - Detects charts with version changes
-      # - Packages them
-      # - Creates GitHub releases
-      # - Updates index.yaml on gh-pages branch
+      # Package charts and create GitHub releases
+      # skip_existing avoids failures when re-running for already-released versions
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: charts
+          skip_existing: true
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
-      # Also publish to GHCR for OCI support
+      # Publish to GHCR even if chart-releaser's index push fails (e.g. branch protection)
       - name: Log in to GHCR
+        if: always()
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Publish changed charts to GHCR
+        if: always()
         run: |
           for chart_dir in charts/*/; do
             chart_name=$(basename "$chart_dir")
