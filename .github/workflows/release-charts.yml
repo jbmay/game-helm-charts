@@ -32,6 +32,7 @@ jobs:
       - name: Add Helm repos for dependencies
         run: |
           helm repo add bitnami https://charts.bitnami.com/bitnami || true
+          helm repo add bjw-s https://bjw-s-labs.github.io/helm-charts || true
 
       # This action handles everything:
       # - Detects charts with version changes
