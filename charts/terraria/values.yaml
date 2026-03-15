@@ -213,7 +213,7 @@ persistence:
   worlds:
     enabled: false
     # existingClaim: ""  # Use an existing PVC instead of creating one
-    mountPath: /root/.local/share/Terraria/Worlds
+    mountPath: /worlds
     accessMode: ReadWriteOnce
     size: 1Gi
   config:
