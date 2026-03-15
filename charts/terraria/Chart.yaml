@@ -6,8 +6,8 @@ version: 0.7.0
 icon: https://gamepedia.cursecdn.com/terraria_gamepedia/c/c4/Terraria.png
 dependencies:
   - name: common
-    repository: https://library-charts.k8s-at-home.com
-    version: 4.5.2
+    repository: https://bjw-s-labs.github.io/helm-charts
+    version: 4.6.2
 maintainers:
   - name: Logan Saso
     email: logansaso@gmail.com

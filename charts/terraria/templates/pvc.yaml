@@ -1,1 +1,1 @@
-{{ include "common.pvc" . }}
+{{ include "bjw-s.common.render.pvcs" . }}
