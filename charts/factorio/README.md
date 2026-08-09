@@ -208,6 +208,43 @@ If you do run into any issues with mods, I will try to work with you on finding 
 | `tolerations`               | Tolerations for pod assignment                     | `[]`       |
 | `affinity`                  | Affinity rules for pod assignment                  | `{}`       |
 
+### File Ownership Parameters
+
+| Name                           | Description                                                                              | Value              |
+|--------------------------------|------------------------------------------------------------------------------------------|--------------------|
+| `puid`                         | User ID that owns `/factorio` and that the game process runs as                            | `845`              |
+| `pgid`                         | Group ID that owns `/factorio` and that the game process runs as                           | `845`              |
+| `podSecurityContext`           | Pod level security context, i.e. `fsGroup`                                                 | `{}`               |
+| `securityContext`              | Security context for the Factorio container                                                | `{runAsUser: 0}`   |
+| `initContainerSecurityContext` | Security context for the init containers; they chown the data dir so they should be root   | `{runAsUser: 0}`   |
+
+`puid`/`pgid` are handed to the image as `PUID`/`PGID` and are also what the init
+containers chown `/factorio` to. This matters whenever something outside the pod
+needs to read or write the save data — a hostPath volume, an NFS export, a backup
+job — because the image's built-in `845:845` usually doesn't exist there.
+
+Two supported setups:
+
+```yaml
+# 1. Default: the container starts as root, the entrypoint remaps its internal
+#    `factorio` user to puid/pgid, chowns /factorio and drops privileges to it.
+puid: 1000
+pgid: 100
+
+# 2. Fully non-root: the game container never runs as root. The init containers
+#    still do, so they can fix up ownership before the game starts.
+puid: 1000
+pgid: 100
+podSecurityContext:
+  fsGroup: 100
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 100
+```
+
+In both cases the factorio process itself ends up running as `puid:pgid` and the
+files it writes are owned by that account.
+
 ### Image Parameters
 
 | Name               | Description                                         | Value                    |

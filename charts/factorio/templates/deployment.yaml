@@ -20,6 +20,10 @@ spec:
         app: {{ template "factorio-server-charts.fullname" . }}
     spec:
       hostNetwork: {{ .Values.service.hostNetwork }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       dnsConfig:
         options:
           - name: ndots
@@ -51,10 +55,10 @@ spec:
                 jq -M --rawfile game_password /gamePassword/game_password '.game_password=($game_password|gsub("[\\n\\t]"; ""))' /factorio/configs/server-settings.json > /tmp/server-settings.json && mv /tmp/server-settings.json /factorio/configs/server-settings.json
               fi
               #sleep 100
-              chown -vR factorio:factorio /factorio
+              {{- include "factorio-server-charts.chownDataDir" . | nindent 14 }}
               chmod -vR 777 /factorio/configs
               ls -alth /factorio
-          {{- with .Values.securityContext }}
+          {{- with .Values.initContainerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -85,7 +89,8 @@ spec:
             - |
               mkdir -p /factorio/mods
               bash /scripts/mod-downloader.sh
-          {{- with .Values.securityContext }}
+              {{- include "factorio-server-charts.chownDataDir" . | nindent 14 }}
+          {{- with .Values.initContainerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -108,7 +113,8 @@ spec:
             - -ec
             - |
               bash /scripts/save-importer.sh
-          {{- with .Values.securityContext }}
+              {{- include "factorio-server-charts.chownDataDir" . | nindent 14 }}
+          {{- with .Values.initContainerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -151,6 +157,14 @@ spec:
           - name: datadir
             mountPath: /factorio
         env:
+        # When the container starts as root the entrypoint remaps its internal
+        # `factorio` user to these ids, chowns /factorio and drops privileges to
+        # it. When it starts as non-root the entrypoint skips all of that and the
+        # process simply runs as the pod's runAsUser, which should match these.
+        - name: PUID
+          value: {{ .Values.puid | quote }}
+        - name: PGID
+          value: {{ .Values.pgid | quote }}
         - name: UPDATE_MODS_ON_START
           value: {{ .Values.factorioServer.update_mods_on_start | quote }}
         - name: INSTANCE_NAME

@@ -8,11 +8,38 @@
 ## @param strategy.type Strategy used to replace old pods
 ## @param tolerations Tolerations for pod assignment
 ## @param affinity Affinity rules for pod assignment
-## @param securityContext Useful for fixing file permissions. See official [docs](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+## @param podSecurityContext Pod level security context, i.e. `fsGroup`. See official [docs](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+## @param securityContext Security context for the Factorio container. See official [docs](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+## @param initContainerSecurityContext Security context for the init containers. They need to be root to chown the data dir to `puid`/`pgid`.
+## @param puid User ID that owns the data dir and that the factorio process runs as
+## @param pgid Group ID that owns the data dir and that the factorio process runs as
 
 replicaCount: 1
 
+## The uid/gid the game process runs as and that everything under /factorio is
+## owned by. These are passed to the image as PUID/PGID: when the container
+## starts as root the entrypoint remaps its internal `factorio` user to them,
+## chowns /factorio and drops privileges with `runuser`. The init containers
+## chown to these numeric ids as well, so the data dir is usable by the same
+## account both inside the pod and on the host (relevant for hostPath volumes).
+## The image defaults are 845/845.
+puid: 845
+pgid: 845
+
+podSecurityContext: {}
+  # fsGroup: 845
+
+## Root by default so the entrypoint can chown /factorio and drop to puid/pgid
+## itself. To run the container as non-root instead, set runAsUser/runAsGroup
+## here to the same values as puid/pgid — the init containers still run as root
+## and fix ownership up front, so the game can write its saves.
 securityContext:
+  runAsUser: 0
+
+## The init containers copy configs, download mods and chown the data dir, so
+## they need to be root regardless of what the game container runs as. Only
+## override this if the volume already has the right ownership.
+initContainerSecurityContext:
   runAsUser: 0
 
 #### Image Configuration ####

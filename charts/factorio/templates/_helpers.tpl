@@ -52,6 +52,16 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
+Shell snippet that hands the data dir to puid/pgid. A no-op when the container
+isn't root, in which case the ownership is expected to be correct already.
+*/}}
+{{- define "factorio-server-charts.chownDataDir" -}}
+if [ "$(id -u)" = "0" ]; then
+  chown -R {{ .Values.puid }}:{{ .Values.pgid }} /factorio
+fi
+{{- end }}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "factorio-server-charts.serviceAccountName" -}}
