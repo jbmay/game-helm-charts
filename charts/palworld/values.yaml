@@ -2,6 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Consumed by the bjw-s common library. alwaysAppendIdentifierToResourceName keeps
+# claims named <fullname>-<key> even when only one of them is enabled, which is what
+# the deployment below references and what the k8s-at-home library used to produce.
+global:
+  alwaysAppendIdentifierToResourceName: true
+
 replicaCount: 1
 
 image:

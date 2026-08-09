@@ -59,7 +59,7 @@ spec:
       - name: game
       {{- if .Values.persistence.game.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "enshrouded.fullname" .  }}-game
+          claimName: {{ .Values.persistence.game.existingClaim | default (printf "%s-game" (include "enshrouded.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}

@@ -50,7 +50,7 @@ spec:
       - name: config
       {{- if .Values.persistence.config.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "hkmp.fullname" .  }}-config
+          claimName: {{ .Values.persistence.config.existingClaim | default (printf "%s-config" (include "hkmp.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}

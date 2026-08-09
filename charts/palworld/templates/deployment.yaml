@@ -92,7 +92,7 @@ spec:
       - name: game
       {{- if .Values.persistence.game.enabled }}
         persistentVolumeClaim:
-          claimName: {{ template "palworld.fullname" .  }}-game
+          claimName: {{ .Values.persistence.game.existingClaim | default (printf "%s-game" (include "palworld.fullname" .)) }}
       {{- else }}
         emptyDir: {}
       {{- end }}
