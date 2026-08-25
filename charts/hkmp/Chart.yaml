@@ -2,12 +2,14 @@ apiVersion: v2
 appVersion: "latest"
 description: hkmp - Hollow Knight Multi Player
 name: hkmp
-version: 0.0.5
+version: 0.0.6
 icon: https://gamepedia.cursecdn.com/hkmp_gamepedia/c/c4/hkmp.png
 dependencies:
   - name: common
     repository: https://bjw-s-labs.github.io/helm-charts
     version: 4.6.2
 maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com
+  - name: jbmay
+    email: 55287318+jbmay@users.noreply.github.com
+sources:
+  - https://github.com/jbmay/game-helm-charts

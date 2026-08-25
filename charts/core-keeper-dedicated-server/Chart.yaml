@@ -2,12 +2,14 @@ apiVersion: v2
 appVersion: "latest"
 description: Core Keeper Dedicated Server
 name: core-keeper-dedicated-server
-version: 0.0.3
+version: 0.0.4
 icon: https://user-images.githubusercontent.com/136487/168213246-7f561105-136e-47fa-abd9-fac1c97ca48d.png
 dependencies:
   - name: common
     repository: https://bjw-s-labs.github.io/helm-charts
     version: 4.6.2
 maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com
+  - name: jbmay
+    email: 55287318+jbmay@users.noreply.github.com
+sources:
+  - https://github.com/jbmay/game-helm-charts

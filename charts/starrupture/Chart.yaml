@@ -1,9 +1,0 @@
-apiVersion: v2
-appVersion: "latest"
-description: StarRupture Dedicated Server - A multiplayer factory/survival game
-name: starrupture
-version: 0.1.1
-icon: https://cdn.cloudflare.steamstatic.com/steam/apps/1631270/header.jpg
-maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com

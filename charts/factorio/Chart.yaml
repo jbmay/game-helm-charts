@@ -16,11 +16,11 @@ keywords:
   - server
   - headless
 sources:
-  - https://github.com/loganintech/helm-charts
+  - https://github.com/jbmay/game-helm-charts
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 1.3.1
+version: 1.3.2
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
@@ -28,8 +28,8 @@ version: 1.3.1
 
 # (optional)
 maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com
+  - name: jbmay
+    email: 55287318+jbmay@users.noreply.github.com
 appVersion: 2.0.8
 deprecated: false
 

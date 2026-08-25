@@ -13,3 +13,11 @@
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl port-forward $POD_NAME 8080:80
 {{- end }}
+{{- if .Values.worldImport.enabled }}
+
+2. Terraria world import is enabled from:
+  {{ .Values.worldImport.image.reference }}{{ .Values.worldImport.sourcePath }}
+
+  Inspect the import result with:
+  kubectl logs --namespace {{ .Release.Namespace }} deployment/{{ include "terraria.fullname" . }} -c import-worlds
+{{- end }}

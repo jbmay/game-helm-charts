@@ -1,13 +1,15 @@
 apiVersion: v2
-appVersion: "latest"
+appVersion: "6.1.0"
 description: Terraria is a 2D sandbox game with gameplay that revolves around exploration, building, combat, and mining.
 name: terraria
-version: 0.8.1
+version: 0.9.1
 icon: https://gamepedia.cursecdn.com/terraria_gamepedia/c/c4/Terraria.png
 dependencies:
   - name: common
     repository: https://bjw-s-labs.github.io/helm-charts
     version: 4.6.2
 maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com
+  - name: jbmay
+    email: 55287318+jbmay@users.noreply.github.com
+sources:
+  - https://github.com/jbmay/game-helm-charts
