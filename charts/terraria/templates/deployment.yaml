@@ -1,3 +1,17 @@
+{{- if .Values.worldImport.enabled }}
+{{- if empty .Values.worldImport.image.reference }}
+{{- fail "worldImport.image.reference is required when worldImport.enabled=true" }}
+{{- end }}
+{{- if not (hasPrefix "/" .Values.worldImport.sourcePath) }}
+{{- fail "worldImport.sourcePath must be an absolute path" }}
+{{- end }}
+{{- if regexMatch `(^|/)\.\.(/|$)` .Values.worldImport.sourcePath }}
+{{- fail "worldImport.sourcePath must not contain '..' path segments" }}
+{{- end }}
+{{- if not (semverCompare ">=1.31.0-0" .Capabilities.KubeVersion.Version) }}
+{{- fail "worldImport requires Kubernetes 1.31 or newer with image volume support" }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,25 +28,91 @@ spec:
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
+      {{- if and (eq .Values.serverType "tshock") .Values.terraria.tshockSettings }}
+      annotations:
+        checksum/tshock-config: {{ include (print $.Template.BasePath "/secret-tshock.yaml") . | sha256sum }}
+      {{- end }}
       labels:
         app.kubernetes.io/name: {{ include "terraria.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       initContainers:
-        {{- if .Values.terraria.tshockSettings }}
+        {{- if .Values.worldImport.enabled }}
+        - name: import-worlds
+          image: {{ .Values.worldImport.copier.image | quote }}
+          imagePullPolicy: {{ .Values.worldImport.copier.pullPolicy }}
+          command: ["/bin/sh", "-ec"]
+          env:
+            - name: WORLD_IMPORT_SOURCE_PATH
+              value: {{ .Values.worldImport.sourcePath | quote }}
+          args:
+            - |
+              SOURCE_DIR="/world-import${WORLD_IMPORT_SOURCE_PATH}"
+              MARKER_DIR="/worlds/.world-imports"
+              MARKER_FILE="${MARKER_DIR}/{{ printf "%s|%s|%v" .Values.worldImport.image.reference .Values.worldImport.sourcePath .Values.worldImport.overwrite | sha256sum | trunc 16 }}"
+
+              if [ -f "${MARKER_FILE}" ]; then
+                echo "World import has already completed for this source."
+                exit 0
+              fi
+              if [ ! -d "${SOURCE_DIR}" ]; then
+                echo "ERROR: World import source directory does not exist: ${SOURCE_DIR}" >&2
+                exit 1
+              fi
+              if ! find "${SOURCE_DIR}" -type f -name '*.wld' -print | grep -q .; then
+                echo "ERROR: No .wld files found beneath ${SOURCE_DIR}" >&2
+                exit 1
+              fi
+
+              mkdir -p /worlds "${MARKER_DIR}"
+              {{- if .Values.worldImport.overwrite }}
+              echo "Importing world data and replacing matching destination paths..."
+              cp -R "${SOURCE_DIR}/." /worlds/
+              {{- else }}
+              echo "Importing world data without replacing existing destination paths..."
+              for source in "${SOURCE_DIR}"/* "${SOURCE_DIR}"/.[!.]* "${SOURCE_DIR}"/..?*; do
+                [ -e "${source}" ] || continue
+                destination="/worlds/$(basename "${source}")"
+                if [ -e "${destination}" ]; then
+                  echo "Preserving existing path: ${destination}"
+                  continue
+                fi
+                cp -R "${source}" /worlds/
+              done
+              {{- end }}
+              for destination in /worlds/* /worlds/.[!.]* /worlds/..?*; do
+                [ -e "${destination}" ] || continue
+                chmod -R u+rwX,g+rwX "${destination}"
+              done
+              touch "${MARKER_FILE}"
+              echo "World import completed."
+          securityContext:
+            {{- toYaml .Values.worldImport.copier.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: world-import
+              mountPath: /world-import
+              readOnly: true
+            - name: terraria-worlds
+              mountPath: /worlds
+          resources:
+            {{- toYaml .Values.worldImport.copier.resources | nindent 12 }}
+        {{- end }}
+        {{- if and (eq .Values.serverType "tshock") .Values.terraria.tshockSettings }}
         - name: init-tshockconfig
           image: busybox:1.36
-          command: ['sh']
+          command: ["/bin/sh", "-ec"]
           args:
-            - -c
             - |
               if [ ! -f /config/config.json ]; then
-                echo {{ dict "Settings" .Values.terraria.tshockSettings | toJson | quote }} > /config/config.json
+                cp /tshock-config/config.json /config/config.json
               fi
               chmod 644 /config/config.json
           volumeMounts:
-          - name: terraria-config
-            mountPath: /config
+            - name: tshock-config
+              mountPath: /tshock-config
+              readOnly: true
+            - name: terraria-config
+              mountPath: /config
         {{- end }}
         - name: init-serverconfig
           image: busybox:1.36
@@ -113,13 +193,21 @@ spec:
             mountPath: /worlds
           - name: terraria-config
             mountPath: /config
+          {{- if eq .Values.serverType "tshock" }}
           - name: tshock-plugins
             mountPath: /tshock/ServerPlugins
           - name: tshock-logs
             mountPath: /tshock/logs
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+      {{- if .Values.worldImport.enabled }}
+      - name: world-import
+        image:
+          reference: {{ .Values.worldImport.image.reference | quote }}
+          pullPolicy: {{ .Values.worldImport.image.pullPolicy }}
+      {{- end }}
       - name: terraria-worlds
       {{- if .Values.persistence.worlds.enabled }}
         persistentVolumeClaim:
@@ -134,6 +222,12 @@ spec:
       {{- else }}
         emptyDir: {}
       {{- end }}
+      {{- if and (eq .Values.serverType "tshock") .Values.terraria.tshockSettings }}
+      - name: tshock-config
+        secret:
+          secretName: {{ include "terraria.fullname" . }}-tshock-config
+      {{- end }}
+      {{- if eq .Values.serverType "tshock" }}
       - name: tshock-plugins
       {{- if .Values.persistence.plugins.enabled }}
         persistentVolumeClaim:
@@ -147,6 +241,7 @@ spec:
           claimName: {{ .Values.persistence.logs.existingClaim | default (printf "%s-logs" (include "terraria.fullname" .)) }}
       {{- else }}
         emptyDir: {}
+      {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

@@ -1,9 +1,0 @@
-apiVersion: v2
-appVersion: "latest"
-description: Voyagers of Nera Dedicated Server - A multiplayer survival exploration game
-name: voyagers-of-nera
-version: 0.1.1
-icon: https://cdn.cloudflare.steamstatic.com/steam/apps/2007810/header.jpg
-maintainers:
-  - name: Logan Saso
-    email: logansaso@gmail.com

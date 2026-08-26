@@ -11,21 +11,33 @@ global:
 replicaCount: 1
 
 # Server type: "tshock" or "vanilla"
-# - tshock: Uses ghcr.io/loganintech/terraria-tshock (full TShock features)
-# - vanilla: Uses ghcr.io/loganintech/terraria-vanilla (pure vanilla server)
+# - tshock: Uses ghcr.io/jbmay/terraria-tshock (full TShock features)
+# - vanilla: Uses ghcr.io/jbmay/terraria-vanilla (pure vanilla server)
 serverType: tshock
 
 image:
-  # Default to TShock - override repository based on serverType
-  # For vanilla: ghcr.io/loganintech/terraria-vanilla
-  # For tshock: ghcr.io/loganintech/terraria-tshock
-  repository: ghcr.io/loganintech/terraria-tshock
-  tag: latest
-  pullPolicy: Always
+  # Default: TShock 6.1.0 for Terraria 1.4.5.8, packaging revision 1.
+  # For vanilla, use repository ghcr.io/jbmay/terraria-vanilla and tag
+  # 1.4.5.8-build.1. Versioned tags contain the server binary and avoid a
+  # deployment-time download.
+  repository: ghcr.io/jbmay/terraria-tshock
+  tag: 6.1.0-build.1
+  pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -48,7 +60,7 @@ terraria:
   service:
     type: NodePort
     port: 7777
-    # nodePort:
+    nodePort: 30777
     annotations: {}
   args:
 
@@ -212,6 +224,32 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# Optionally import existing Terraria worlds from an OCI image volume before
+# the server starts. Image volumes require Kubernetes 1.31+ and a compatible
+# container runtime; the ImageVolume feature gate may also need to be enabled
+# before Kubernetes 1.36. Prefer an immutable digest in image.reference.
+worldImport:
+  enabled: false
+  image:
+    # Expected layout: <sourcePath>/*.wld (backups and related files may also
+    # be included). Example: ghcr.io/example/terraria-worlds@sha256:...
+    reference: ""
+    pullPolicy: IfNotPresent
+  sourcePath: /worlds
+  # Existing destination paths are preserved by default. When true, source
+  # paths replace matching content once for each unique import configuration.
+  overwrite: false
+  copier:
+    image: busybox:1.36
+    pullPolicy: IfNotPresent
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+    resources: {}
 
 persistence:
   worlds:

@@ -1,15 +1,15 @@
 project:
   name: factorio
   shortName: factorio
-  url: https://github.com/loganintech/helm-charts
+  url: https://github.com/jbmay/game-helm-charts
   description: A Helm chart for running factorio in kubernetes
   app: Factorio
 repository:
-  url: https://github.com/loganintech/helm-charts
+  url: https://github.com/jbmay/game-helm-charts
   name: github
 chart:
   name: factorio-server-charts
-  version: 1.2.6
+  version: 1.3.2
   values: "-- generate from values file --"
   valuesExample: "-- generate from values file --"
 release:
