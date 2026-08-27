@@ -1,0 +1,105 @@
+apiVersion: v1
+entries:
+  core-keeper-dedicated-server:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-08-27T03:04:51.279283902Z"
+    dependencies:
+    - name: common
+      repository: https://bjw-s-labs.github.io/helm-charts
+      version: 4.6.2
+    description: Core Keeper Dedicated Server
+    digest: 5f9cf8c4cafa66a317de94f695ef5d3eaa972babed8baa1dc17f3aee738d3085
+    icon: https://user-images.githubusercontent.com/136487/168213246-7f561105-136e-47fa-abd9-fac1c97ca48d.png
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: core-keeper-dedicated-server
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/core-keeper-dedicated-server-0.0.4/core-keeper-dedicated-server-0.0.4.tgz
+    version: 0.0.4
+  factorio:
+  - apiVersion: v2
+    appVersion: 2.0.8
+    created: "2026-08-27T03:04:51.405467116Z"
+    description: A Helm chart for running factorio in kubernetes
+    digest: 8bb017ddda0a7f57de37f4f36926b40c79806da5b80449f190b151ffe8b2b0f4
+    icon: https://factorio.com/static/img/factorio-wheel.png
+    keywords:
+    - game
+    - server
+    - headless
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: factorio
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    type: application
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/factorio-1.3.2/factorio-1.3.2.tgz
+    version: 1.3.2
+  hkmp:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-08-27T03:04:51.544503749Z"
+    dependencies:
+    - name: common
+      repository: https://bjw-s-labs.github.io/helm-charts
+      version: 4.6.2
+    description: hkmp - Hollow Knight Multi Player
+    digest: de80d960a8a628a811ca628937c95ca8e853b820941f95eb71318dd204699bcf
+    icon: https://gamepedia.cursecdn.com/hkmp_gamepedia/c/c4/hkmp.png
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: hkmp
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/hkmp-0.0.6/hkmp-0.0.6.tgz
+    version: 0.0.6
+  palworld:
+  - apiVersion: v2
+    appVersion: latest
+    created: "2026-08-27T03:04:51.693380264Z"
+    dependencies:
+    - name: common
+      repository: https://bjw-s-labs.github.io/helm-charts
+      version: 4.6.2
+    description: palworld - Palworld Dedicated Server
+    digest: a1658031101eb93bf5498f0e9b0ae704962c4e78c961bd537e30e9c34b518a13
+    icon: https://cdn.akamai.steamstatic.com/steam/apps/1623730/header.jpg
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: palworld
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/palworld-0.0.4/palworld-0.0.4.tgz
+    version: 0.0.4
+  terraria:
+  - apiVersion: v2
+    appVersion: 6.1.0
+    created: "2026-08-27T03:04:51.861132628Z"
+    dependencies:
+    - name: common
+      repository: https://bjw-s-labs.github.io/helm-charts
+      version: 4.6.2
+    description: Terraria is a 2D sandbox game with gameplay that revolves around
+      exploration, building, combat, and mining.
+    digest: a60fae076864ab58185fa3754b74d49e493fec5c1ddc6b7ab7a31ed03be9781f
+    icon: https://gamepedia.cursecdn.com/terraria_gamepedia/c/c4/Terraria.png
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: terraria
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/terraria-0.9.1/terraria-0.9.1.tgz
+    version: 0.9.1
+generated: "2026-08-27T03:04:51.861139969Z"
