@@ -52,7 +52,7 @@ image:
   ## Container image pull policy
   pullPolicy: Always
   ## Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: "2.1.24"
   ## You should set an fix version, i.e.:
   # tag: "1.1.37"
 
@@ -160,6 +160,10 @@ persistence:
 ## @param mods.unofficial List of unofficial mods name and url to download into the mods folder
 mods:
   enabled: false
+  # Synchronize portal mods from factorioServer.save_name before startup.
+  # With load_latest_save=true, select the newest complete ZIP, including autosaves.
+  # Bypasses the manual mods downloader.
+  syncFromSave: false
 # in order to use the mods portal you will need to specify the username and token in the server_settings.
   portal: []
 #     - Krastorio2
@@ -179,6 +183,10 @@ mods:
 ## @param factorioServer.update_mods_on_start Update mods on server start
 ## @param factorioServer.load_latest_save Lets the game know if you want to load the latest save
 factorioServer:
+  # Explicit local bind address. For NodePort services the game port defaults
+  # to service.port; otherwise it defaults to 34197. Set port to override.
+  bindAddress: "0.0.0.0"
+  port: null
   # specify a save name
   save_name: "replaceMe"
   # Generate a New Save
@@ -187,6 +195,16 @@ factorioServer:
   update_mods_on_start: false
   # lets the game know if you want to load the latest save
   load_latest_save: true
+
+imagePullSecrets: []
+
+# Import ZIP saves from the root of an OCI image before starting the server.
+# Requires Kubernetes image-volume support. Existing saves are preserved unless
+# overwrite is true; each image reference is imported once.
+saveImport:
+  enabled: false
+  image: ""
+  overwrite: false
 
 import_save:
   # enable save importer

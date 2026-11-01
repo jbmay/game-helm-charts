@@ -61,6 +61,17 @@ if [ "$(id -u)" = "0" ]; then
 fi
 {{- end }}
 
+{{/* Keep the listener, container port and Service target aligned. */}}
+{{- define "factorio-server-charts.gamePort" -}}
+{{- if .Values.factorioServer.port -}}
+{{- .Values.factorioServer.port -}}
+{{- else if and (eq .Values.service.type "NodePort") .Values.service.port -}}
+{{- .Values.service.port -}}
+{{- else -}}
+34197
+{{- end -}}
+{{- end -}}
+
 {{/*
 Create the name of the service account to use
 */}}

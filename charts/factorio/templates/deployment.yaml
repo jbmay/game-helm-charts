@@ -1,3 +1,15 @@
+{{- if and .Values.saveImport.enabled (empty .Values.saveImport.image) }}
+{{- fail "saveImport.image is required when saveImport.enabled=true" }}
+{{- end }}
+{{- if and .Values.saveImport.enabled .Values.import_save.enabled }}
+{{- fail "Disable import_save.enabled when using saveImport.enabled" }}
+{{- end }}
+{{- if and .Values.saveImport.enabled (not (semverCompare ">=1.31.0-0" .Capabilities.KubeVersion.Version)) }}
+{{- fail "Save image imports require Kubernetes 1.31+ with image-volume support" }}
+{{- end }}
+{{- if and .Values.mods.syncFromSave .Values.factorioServer.update_mods_on_start }}
+{{- fail "Disable factorioServer.update_mods_on_start when using mods.syncFromSave" }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +31,10 @@ spec:
       labels:
         app: {{ template "factorio-server-charts.fullname" . }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       hostNetwork: {{ .Values.service.hostNetwork }}
       {{- with .Values.podSecurityContext }}
       securityContext:
@@ -29,6 +45,48 @@ spec:
           - name: ndots
             value: '1'
       initContainers:
+        {{- if .Values.saveImport.enabled }}
+        - name: import-save-image
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              mkdir -p /factorio/saves /factorio/.save-imports
+              marker="/factorio/.save-imports/{{ printf "%s|%v" .Values.saveImport.image .Values.saveImport.overwrite | sha256sum | trunc 16 }}"
+              if [ -f "$marker" ]; then
+                echo "Save import already completed."
+                exit 0
+              fi
+              found=false
+              for source in /save-import/*.zip; do
+                [ -f "$source" ] || continue
+                found=true
+                destination="/factorio/saves/$(basename "$source")"
+                {{- if not .Values.saveImport.overwrite }}
+                if [ -e "$destination" ]; then
+                  echo "Preserving existing save: $destination"
+                  continue
+                fi
+                {{- end }}
+                cp "$source" "$destination"
+              done
+              if [ "$found" != true ]; then
+                echo "No save ZIP files found at image root" >&2
+                exit 1
+              fi
+              {{- include "factorio-server-charts.chownDataDir" . | nindent 14 }}
+              touch "$marker"
+              echo "Save import completed."
+          securityContext:
+            {{- toYaml .Values.initContainerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /factorio
+            - name: save-import
+              mountPath: /save-import
+              readOnly: true
+        {{- end }}
         - name: volume-permissions-serversettingsconfig
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy:  {{ .Values.image.pullPolicy }}
@@ -79,7 +137,7 @@ spec:
             - name: game-password
               mountPath: /gamePassword
             {{- end }}
-        {{- if .Values.mods.enabled }}
+        {{- if and .Values.mods.enabled (not .Values.mods.syncFromSave) }}
         - name: download-factorio-mods
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy:  {{ .Values.image.pullPolicy }}
@@ -123,9 +181,44 @@ spec:
               mountPath: /factorio
             - name: {{ template "factorio-server-charts.fullname" . }}-save-importer-configmap
               mountPath: /scripts
-        {{- end }}        
+        {{- end }}
+        {{- if .Values.mods.syncFromSave }}
+        - name: sync-save-mods
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-ec", "bash /scripts/sync-save-mods.sh"]
+          env:
+            - name: SAVE_NAME
+              value: {{ .Values.factorioServer.save_name | quote }}
+            - name: LOAD_LATEST_SAVE
+              value: {{ .Values.factorioServer.load_latest_save | quote }}
+          securityContext:
+            {{- toYaml .Values.initContainerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /factorio
+            - name: {{ template "factorio-server-charts.fullname" . }}-mod-downloader-configmap
+              mountPath: /scripts
+            - name: save-selection
+              mountPath: /save-selection
+            {{- if or (.Values.account.accountSecret) (.Values.account.username) }}
+            - name: account-data
+              mountPath: /account
+              readOnly: true
+            {{- end }}
+        {{- end }}
       containers:
       - name: {{ template "factorio-server-charts.fullname" . }}
+        {{- if .Values.mods.syncFromSave }}
+        # Start exactly the save selected by the init container. In particular,
+        # do not generate a new named save that supersedes a resumed autosave.
+        command: ["/bin/bash", "-ec"]
+        args:
+          - |
+            IFS= read -r SAVE_NAME < /save-selection/name
+            export SAVE_NAME LOAD_LATEST_SAVE=false GENERATE_NEW_SAVE=false
+            exec /docker-entrypoint.sh
+        {{- end }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- with .Values.securityContext }}
@@ -143,13 +236,18 @@ spec:
           failureThreshold: 3
         ports:
         - name: factorio
-          containerPort: 34197
+          containerPort: {{ include "factorio-server-charts.gamePort" . }}
           protocol: UDP
         - containerPort: 27015
           protocol: TCP
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         volumeMounts:
+          {{- if .Values.mods.syncFromSave }}
+          - name: save-selection
+            mountPath: /save-selection
+            readOnly: true
+          {{- end }}
           {{- if or (.Values.account.accountSecret) (.Values.account.username) }}
           - name: account-data
             mountPath: /account
@@ -179,11 +277,27 @@ spec:
           value: {{ .Values.factorioServer.load_latest_save | quote }}
         - name: CONFIG
           value: /factorio/configs
+        - name: PORT
+          value: {{ include "factorio-server-charts.gamePort" . | quote }}
+        - name: BIND
+          # The image already supplies --port; Factorio rejects a second port
+          # in --bind, so pass only the address here.
+          value: {{ .Values.factorioServer.bindAddress | quote }}
 {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
     {{- end }}
       volumes:
+        {{- if .Values.mods.syncFromSave }}
+        - name: save-selection
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.saveImport.enabled }}
+        - name: save-import
+          image:
+            reference: {{ .Values.saveImport.image | quote }}
+            pullPolicy: Always
+        {{- end }}
         {{- if or (.Values.account.accountSecret) (.Values.account.username) }}
         - name: account-data
           secret:

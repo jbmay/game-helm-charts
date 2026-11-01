@@ -8,6 +8,54 @@ metadata:
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 data:
+  sync-save-mods.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    if [ "${LOAD_LATEST_SAVE:-false}" = true ]; then
+      save=""
+      for candidate in /factorio/saves/*.zip; do
+        [ -f "$candidate" ] || continue
+        case "$candidate" in *.tmp.zip) continue ;; esac
+        if [ -z "$save" ] || [ "$candidate" -nt "$save" ]; then
+          save="$candidate"
+        fi
+      done
+    else
+      case "$SAVE_NAME" in
+        ""|*/*|*\\*) echo "SAVE_NAME must be a filename without .zip" >&2; exit 1 ;;
+      esac
+      save="/factorio/saves/${SAVE_NAME}.zip"
+    fi
+    if [ ! -f "$save" ]; then
+      echo "Cannot synchronize mods: selected save does not exist: $save" >&2
+      exit 1
+    fi
+    mkdir -p /factorio/mods
+    sync_dir=$(mktemp -d /tmp/factorio-mod-sync.XXXXXX)
+    trap 'rm -rf -- "$sync_dir"' EXIT
+    chmod 700 "$sync_dir"
+    printf '[path]\nread-data=/opt/factorio/data\nwrite-data=%s\n' "$sync_dir" > "$sync_dir/config.ini"
+    if [ -f /account/username ] || [ -f /account/token ]; then
+      if [ ! -s /account/username ] || [ ! -s /account/token ]; then
+        echo "Mod Portal downloads require both username and token keys in the account Secret" >&2
+        exit 1
+      fi
+      umask 077
+      jq -n --rawfile username /account/username --rawfile token /account/token \
+        '{"service-username": ($username | gsub("[\\r\\n]"; "")), "service-token": ($token | gsub("[\\r\\n]"; ""))}' \
+        > "$sync_dir/player-data.json"
+    fi
+    echo "Synchronizing mods from $save"
+    exec_prefix=()
+    if [ -f /bin/box64 ]; then exec_prefix=(/bin/box64); fi
+    "${exec_prefix[@]}" /opt/factorio/bin/x64/factorio \
+      --config "$sync_dir/config.ini" --mod-directory /factorio/mods --sync-mods "$save"
+    {{- include "factorio-server-charts.chownDataDir" . | nindent 4 }}
+    mkdir -p /save-selection
+    selected_name=$(basename "$save" .zip)
+    printf '%s\n' "$selected_name" > /save-selection/name
+    chmod 644 /save-selection/name
+    echo "Save mod synchronization completed."
   # credit to the factoriotools/factorio-docker team, most of this logic came from them
   # https://github.com/factoriotools/factorio-docker/blob/master/docker/files/update-mods.sh
   mod-downloader.sh: |

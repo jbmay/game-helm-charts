@@ -7,6 +7,36 @@ kubernetes
 
 ## Introduction
 
+The server explicitly binds to `factorioServer.bindAddress` (default
+`0.0.0.0`). Its game port defaults to `service.port` for NodePort services,
+or 34197 otherwise; override with `factorioServer.port`. The container port
+and Service target follow the game port automatically. This sets the local
+listener, not an advertised public address or an outbound NAT policy.
+
+### Import saves from an OCI image
+
+To download and enable mods from the selected save, set `mods.syncFromSave:
+true` and `factorioServer.update_mods_on_start: false`. With
+`factorioServer.load_latest_save: true`, the newest complete save ZIP (including
+autosaves, excluding `*.tmp.zip`) is selected by modification time. With false,
+`factorioServer.save_name` selects the save. The init container records the
+selection in an emptyDir, and startup loads exactly that file without creating
+a new save or re-evaluating which file is newest. Synchronization runs after save
+imports using Factorio's `--sync-mods`. It bypasses the manual mod downloader.
+Configure `account.accountSecret` with `username` and `token` keys for Mod
+Portal downloads. Downloaded mods persist in the data PVC; synchronization
+credentials use a temporary runtime directory. A selected save must exist.
+
+Set `saveImport.enabled: true` and `saveImport.image` to an OCI image whose
+root contains save `.zip` files. Requires Kubernetes image-volume support.
+Disable the legacy `import_save.enabled` importer when using this option.
+ZIP files are copied to `/factorio/saves` before the server starts, preserving
+existing filenames unless `saveImport.overwrite: true`. Each image reference
+and overwrite setting is imported once, tracked on the data PVC.
+Set `factorioServer.save_name` to the selected filename without `.zip` and
+`factorioServer.load_latest_save: false` to select it explicitly. Configure
+`imagePullSecrets` when the save image requires registry authentication.
+
 This chart deploys Factorio on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package
 manager.
 
@@ -14,6 +44,59 @@ manager.
 
 - An open NodePort or a UDP capable LoadBalancer if playing publicly.
 - Networking knowledge to route the traffic to the appropriate port.
+
+## Public server list and outbound NAT
+
+A public listing is discovery, not a relay: players still connect directly to
+the server's advertised UDP endpoint. Factorio uses its ping-pong servers to
+discover that public IP and port. If the CNI or another NAT device rewrites
+outbound source ports differently for each destination, the discovered port
+can differ from the reachable NodePort. In that situation, connecting through
+the public server list will fail even though direct connection to the node IP
+and NodePort works. Successful registration does not prove the advertised
+endpoint is reachable.
+
+We reproduced this with Flannel v0.27.4's default masquerading behavior on
+Talos: Factorio listened on UDP port 31497 and the NodePort was also 31497, but
+the ping-pong servers reported different random external ports. Logs contained
+`Received own address message reply with conflicting address` and
+`Determining own address has failed. Best guess`. Explicitly binding the
+listener to the NodePort did not resolve it.
+
+Disabling Flannel's fully random masquerading with
+`--ip-masq-fully-random-disable` resolved this deployment's public-list
+connectivity. After applying it and restarting Factorio, the ping-pong servers
+consistently confirmed the node's public IP with port 31497, and joining through
+the public server list worked.
+
+For Talos-managed Flannel, persist the argument in a machine-config patch:
+
+```yaml
+cluster:
+  network:
+    cni:
+      name: flannel
+      flannel:
+        extraArgs:
+          - --ip-masq-fully-random-disable
+```
+
+Preserve any existing Flannel extra arguments. This is a cluster networking
+setting, not a Factorio Helm value; neither this chart nor the Zarf package
+applies it automatically. Ensure the running Flannel DaemonSet receives the
+argument and its active masquerade rules no longer contain `--random-fully`.
+In our existing Talos cluster, the live DaemonSet also needed updating after
+the machine-config patch. Save the game and restart Factorio afterward to test
+fresh address discovery; existing NAT mappings can retain old ports.
+
+Disabling full randomization lets NAT preserve source ports where possible,
+but collisions or another NAT layer can still change them. This affects all
+Flannel-managed masqueraded traffic, not just Factorio. Other CNIs may have
+different settings; verify that the advertised IP and port match the externally
+reachable endpoint.
+
+References: [Flannel v0.27.4 masquerade rules](https://github.com/flannel-io/flannel/blob/v0.27.4/pkg/trafficmngr/iptables/iptables.go),
+[Talos Flannel configuration](https://docs.siderolabs.com/talos/v1.12/reference/configuration/v1alpha1/config).
 
 ## Background
 

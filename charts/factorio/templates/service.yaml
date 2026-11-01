@@ -20,7 +20,7 @@ spec:
   {{- end }}
   ports:
     - name: factorio
-      targetPort: 34197
+      targetPort: factorio
       {{- if .Values.service.port }}
       port: {{ .Values.service.port }}
       {{- else }}
