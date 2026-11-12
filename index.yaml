@@ -23,6 +23,26 @@ entries:
   factorio:
   - apiVersion: v2
     appVersion: 2.1.24
+    created: "2026-11-12T07:40:55.143605706Z"
+    description: A Helm chart for running factorio in kubernetes
+    digest: b653eb01a26d1cbe41d5b6e6ff8eeffe3424121956b4ff79a47f3c0a69edace5
+    icon: https://factorio.com/static/img/factorio-wheel.png
+    keywords:
+    - game
+    - server
+    - headless
+    maintainers:
+    - email: 55287318+jbmay@users.noreply.github.com
+      name: jbmay
+    name: factorio
+    sources:
+    - https://github.com/jbmay/game-helm-charts
+    type: application
+    urls:
+    - https://github.com/jbmay/game-helm-charts/releases/download/factorio-1.5.0/factorio-1.5.0.tgz
+    version: 1.5.0
+  - apiVersion: v2
+    appVersion: 2.1.24
     created: "2026-11-01T22:07:57.224420494Z"
     description: A Helm chart for running factorio in kubernetes
     digest: 6f58e02581215c6a414d0b80bcac202d6f91ecaa48715df2b3553e76c2bfd07b
@@ -122,4 +142,4 @@ entries:
     urls:
     - https://github.com/jbmay/game-helm-charts/releases/download/terraria-0.9.1/terraria-0.9.1.tgz
     version: 0.9.1
-generated: "2026-11-01T22:07:57.224440351Z"
+generated: "2026-11-12T07:40:55.143615011Z"
