@@ -1,3 +1,13 @@
+{{- $pinnedMods := list }}
+{{- if and .Values.mods.enabled (not .Values.mods.syncFromSave) }}
+{{- range .Values.mods.portal }}
+{{- if kindIs "map" . }}
+{{- if .version }}
+{{- $pinnedMods = append $pinnedMods .name }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if and .Values.saveImport.enabled (empty .Values.saveImport.image) }}
 {{- fail "saveImport.image is required when saveImport.enabled=true" }}
 {{- end }}
@@ -28,6 +38,8 @@ spec:
 {{ toYaml .Values.strategy | indent 4 }}
   template:
     metadata:
+      annotations:
+        checksum/mod-downloader: {{ include (print $.Template.BasePath "/mod-downloader-configmap.yaml") . | sha256sum }}
       labels:
         app: {{ template "factorio-server-charts.fullname" . }}
     spec:
@@ -265,6 +277,11 @@ spec:
           value: {{ .Values.pgid | quote }}
         - name: UPDATE_MODS_ON_START
           value: {{ .Values.factorioServer.update_mods_on_start | quote }}
+        {{- if $pinnedMods }}
+        # The image's startup updater skips exact pins and updates other mods.
+        - name: UPDATE_IGNORE
+          value: {{ join "," $pinnedMods | quote }}
+        {{- end }}
         - name: INSTANCE_NAME
           value: {{ .Values.server_settings.name | quote }}
         - name: INSTANCE_DESC

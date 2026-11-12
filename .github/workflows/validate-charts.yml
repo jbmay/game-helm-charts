@@ -76,6 +76,10 @@ jobs:
           cd charts/${{ matrix.chart }}
           helm template test . --debug
 
+      - name: Test Factorio mod downloader
+        if: matrix.chart == 'factorio'
+        run: python3 -m unittest discover -s charts/factorio/tests -v
+
       - name: Check version bump
         if: github.event_name == 'pull_request'
         run: |

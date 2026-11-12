@@ -156,7 +156,7 @@ persistence:
 #### Factorio application configuration ####
 ## @section Factorio Parameters
 ## @param mods.enabled Enable mods
-## @param mods.portal List of official mods to be downloaded from Factorio Mod Portal
+## @param mods.portal Mod Portal names (latest compatible) or objects with name and optional version
 ## @param mods.unofficial List of unofficial mods name and url to download into the mods folder
 mods:
   enabled: false
@@ -169,6 +169,8 @@ mods:
 #     - Krastorio2
 #     - StorageTank2_Updated
 #     - early-robots
+#     - name: some-mod
+#       version: "1.2.3" # Exact mod version; skipped by startup updates
 # unofficial section is meant to just allow you to download and place folders into the mods folder.
 # we will not check version compatibility automatically with these downloads.
 # you can encounter an error if the file names dont match what the mod is expecting for example
@@ -180,7 +182,7 @@ mods:
 
 ## @param factorioServer.save_name Factorio save name
 ## @param factorioServer.generate_new_save Generate a new save if `save_name` is not found
-## @param factorioServer.update_mods_on_start Update mods on server start
+## @param factorioServer.update_mods_on_start Update unpinned mods on server start
 ## @param factorioServer.load_latest_save Lets the game know if you want to load the latest save
 factorioServer:
   # Explicit local bind address. For NodePort services the game port defaults

@@ -82,8 +82,7 @@ cluster:
 ```
 
 Preserve any existing Flannel extra arguments. This is a cluster networking
-setting, not a Factorio Helm value; neither this chart nor the Zarf package
-applies it automatically. Ensure the running Flannel DaemonSet receives the
+setting, not a Factorio Helm value; this chart does not apply it automatically. Ensure the running Flannel DaemonSet receives the
 argument and its active masquerade rules no longer contain `--random-fully`.
 In our existing Talos cluster, the live DaemonSet also needed updating after
 the machine-config patch. Save the game and restart Factorio afterward to test
@@ -236,6 +235,44 @@ mods:
     - url: "https://github.com/Suprcheese/Squeak-Through/archive/refs/tags/1.8.2.zip"
       name: "Squeak Through_1.8.2.zip"
 ```
+Portal entries can also be objects with a `name` and optional quoted `version`:
+
+```yaml
+mods:
+  enabled: true
+  syncFromSave: false
+  portal:
+    - early-robots # Latest compatible release
+    - name: some-mod
+      version: "1.2.3" # Exact mod version (replace with a real release)
+factorioServer:
+  update_mods_on_start: true # Update unpinned mods; exact pins are skipped
+```
+
+Name-only entries and objects without `version` select the latest compatible
+release. An exact pin must exist and match the server's Factorio major/minor
+version; otherwise the init container fails instead of falling back to latest.
+The downloader enables each listed mod and records exact pins in
+`/factorio/mods/mod-list.json`, so pins also work when newer ZIPs remain on the
+PVC. Name-only entries and objects without `version` have any previous pin
+cleared, allowing subsequent updates. Removing a version field returns that
+entry to latest-compatible selection.
+
+With `factorioServer.update_mods_on_start: true`, the image's startup updater
+updates enabled, unpinned mods, including ones already installed on the PVC.
+The chart passes pinned portal mod names through the image's `UPDATE_IGNORE`
+environment variable so the updater skips them. With false, the manual
+portal downloader still selects releases for the configured list when a pod
+is created. Save synchronization bypasses this downloader, so use
+`mods.syncFromSave: false` for manual lists.
+Changes to the downloader configuration trigger a pod rollout on upgrade.
+
+Configure `account.accountSecret` with `username` and `token` keys, or set
+`account.username` and `account.token`. Required mod dependencies must also be
+listed; they are not resolved automatically. Removing a portal entry does not
+remove or disable a previously installed mod. Existing bundled/DLC entries and
+mod settings are preserved.
+
 If the Factorio server doesn't start, check that the logs don't have an error with the mods. They are pretty verbose.
 
 ### Space Exploration and other overhaul mods
@@ -363,7 +400,7 @@ files it writes are owned by that account.
 | `mods.unofficial`                                              | List of unofficial mods name and url to download into the mods folder                                                                    | `[]`                             |
 | `factorioServer.save_name`                                     | Factorio save name                                                                                                                       | `replaceMe`                      |
 | `factorioServer.generate_new_save`                             | Generate a new save if `save_name` is not found                                                                                          | `true`                           |
-| `factorioServer.update_mods_on_start`                          | Update mods on server start                                                                                                              | `false`                          |
+| `factorioServer.update_mods_on_start`                          | Update unpinned mods on server start                                                                                                              | `false`                          |
 | `factorioServer.load_latest_save`                              | Lets the game know if you want to load the latest save                                                                                   | `true`                           |
 | `import_save.enabled`                                          | Enable save importer. Importer runs at every pod initialization. **:warning: Overwrites existing save if successful**                    | `true`                           |
 | `import_save.source_url`                                       | Full URL (including http(s)://). If left blank, saves can still be imported by placing in '/factorio/save-importer/import'               | `""`                             |

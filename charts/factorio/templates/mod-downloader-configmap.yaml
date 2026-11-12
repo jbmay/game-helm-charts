@@ -59,104 +59,98 @@ data:
   # credit to the factoriotools/factorio-docker team, most of this logic came from them
   # https://github.com/factoriotools/factorio-docker/blob/master/docker/files/update-mods.sh
   mod-downloader.sh: |
+    #!/bin/bash
+    set -euo pipefail
     modDir=/factorio/mods
     MOD_BASE_URL="https://mods.factorio.com"
-    declare -a officialMods
-    officialMods=(
-      {{- range .Values.mods.portal }}
-      {{ . }}
-      {{- end }}
+    portalMods=$(cat <<'FACTORIO_PORTAL_MODS_JSON'
+    {{ .Values.mods.portal | toJson }}
+    FACTORIO_PORTAL_MODS_JSON
     )
+    # Keep names as data rather than interpolating them into shell commands.
+    jq -e 'type == "array" and all(.[];
+      if type == "string" then length > 0
+      elif type == "object" then
+        (.name | type == "string" and length > 0) and
+        ((has("version") | not) or (.version | type == "string" and test("^[0-9]+\\.[0-9]+\\.[0-9]+$")))
+      else false end)' <<< "$portalMods" >/dev/null || {
+      echo "mods.portal entries must be names or objects with name and optional version (quoted major.minor.patch)" >&2
+      exit 1
+    }
+    mapfile -t officialMods < <(jq -c '.[] | if type == "string" then {name: .} else . end' <<< "$portalMods")
     declare -A unofficialMods
     {{- range .Values.mods.unofficial }}
     unofficialMods[{{ .name | quote}}]={{ .url | quote}}
     {{- end }}
-    function print_step()
-    {
-      echo "$1"
-    }
-    function print_success()
-    {
-      echo "$1"
-    }
-    function print_failure()
-    {
-      echo "$1"
-    }
     function downloadUnofficial() {
-        cd $modDir;curl -L -o $2 $1
+      (cd "$modDir"; curl -fL -o "$2" "$1")
     }
     function downloadofficial() {
-        if [[ -z ${USERNAME:-} ]]; then
-          USERNAME="$(cat /account/username)"
-        fi
-
-        if [[ -z ${TOKEN:-} ]]; then
-          TOKEN="$(cat /account/token)"
-        fi
-
-        if [[ -z ${USERNAME:-} ]]; then
-          echo "You need to provide your Factorio username to update mods."
-        fi
-
-        if [[ -z ${TOKEN:-} ]]; then
-          echo "You need to provide your Factorio token to update mods."
-        fi
-        MOD_INFO_URL="$MOD_BASE_URL/api/mods/$1"
-        MOD_INFO_JSON=$(curl --silent "$MOD_INFO_URL")
-    #    echo "$MOD_INFO_URL $MOD_INFO_JSON"
-        if ! echo "$MOD_INFO_JSON" | jq -e .name >/dev/null; then
-          print_success "  Custom mod not on $MOD_BASE_URL, skipped."
-          return 0
-        fi
-        MOD_INFO=$(echo "$MOD_INFO_JSON" | jq -j --arg version "$VERSION" ".releases|reverse|map(select(.info_json.factorio_version as \$mod_version | \$version | startswith(\$mod_version)))[0]|.file_name, \";\", .download_url, \";\", .sha1")
-        echo $MOD_INFO
-        MOD_FILENAME=$(echo "$MOD_INFO" | cut -f1 -d";")
-        MOD_URL=$(echo "$MOD_INFO" | cut -f2 -d";")
-        MOD_SHA1=$(echo "$MOD_INFO" | cut -f3 -d";")
-        if [[ $MOD_FILENAME == null ]]; then
-          print_failure "  Not compatible with version"
-          return 0
-        fi
-        print_step "Downloading..."
-        FULL_URL="$MOD_BASE_URL$MOD_URL?username=$USERNAME&token=$TOKEN"
-        echo $FULL_URL
-        HTTP_STATUS=$(curl --silent -L -w "%{http_code}" -o "$modDir/$MOD_FILENAME" "$FULL_URL")
-
-        if [[ $HTTP_STATUS != 200 ]]; then
-          print_failure "  Download failed: Code $HTTP_STATUS."
-          rm -f "$modDir/$MOD_FILENAME"
-          return 1
-        fi
-
-        if [[ ! -f $modDir/$MOD_FILENAME ]]; then
-          print_failure "  Downloaded file missing!"
-          return 1
-        fi
-
-        if ! [[ $(sha1sum "$modDir/$MOD_FILENAME") =~ $MOD_SHA1 ]]; then
-          print_failure "  SHA1 mismatch!"
-          rm -f "$modDir/$MOD_FILENAME"
-          return 1
-        fi
-
-        print_success "  Download complete."
-    }
-    mkdir -p $modDir
-    for key in "${!unofficialMods[@]}"; do
-      downloadUnofficial "${unofficialMods[$key]}" $key
-    done
-
-    if [ -f "/account/username" ]; then
-      if [ -f "/account/token" ]; then
-        echo "server is running version $VERSION"
-        for officialMod in ${officialMods[*]}; do
-          downloadofficial $officialMod $USERNAME $TOKEN
-        done
+      local name="$1" requested_version="$2"
+      local metadata release filename url sha1 actual_version http_status list_tmp
+      echo "Selecting $name ${requested_version:-latest compatible}"
+      metadata=$(curl --fail --silent --show-error "$MOD_BASE_URL/api/mods/$name")
+      release=$(jq -c --arg game_version "$VERSION" --arg requested "$requested_version" '
+        [.releases[]
+          | select((.info_json.factorio_version | split(".")[:2]) == ($game_version | split(".")[:2]))
+          | select($requested == "" or .version == $requested)]
+        | last // empty' <<< "$metadata")
+      if [ -z "$release" ]; then
+        echo "No compatible release for $name ${requested_version:-latest} on Factorio $VERSION" >&2
+        return 1
       fi
+      filename=$(jq -er '.file_name' <<< "$release")
+      url=$(jq -er '.download_url' <<< "$release")
+      sha1=$(jq -er '.sha1' <<< "$release")
+      actual_version=$(jq -er '.version' <<< "$release")
+      echo "Downloading $filename"
+      # Do not print the authenticated URL: it contains the Mod Portal token.
+      http_status=$(curl --silent --show-error -L -w "%{http_code}" \
+        -o "$modDir/$filename" "$MOD_BASE_URL$url?username=$USERNAME&token=$TOKEN")
+      if [ "$http_status" != 200 ]; then
+        echo "Download failed for $name: HTTP $http_status" >&2
+        rm -f -- "$modDir/$filename"
+        return 1
+      fi
+      if ! printf '%s  %s\n' "$sha1" "$modDir/$filename" | sha1sum --check --status; then
+        echo "SHA1 mismatch for $name" >&2
+        rm -f -- "$modDir/$filename"
+        return 1
+      fi
+      # A newer ZIP may already exist on the PVC. Pin exact versions explicitly,
+      # but clear old pins for latest entries so the startup updater can update them.
+      if [ ! -f "$modDir/mod-list.json" ]; then
+        printf '%s\n' '{"mods":[]}' > "$modDir/mod-list.json"
+      fi
+      list_tmp=$(mktemp "$modDir/mod-list.json.XXXXXX")
+      if ! jq --arg name "$name" --arg version "$requested_version" '
+        def selected:
+          . + {enabled: true} |
+          if $version == "" then del(.version) else . + {version: $version} end;
+        .mods = ((.mods // []) | if any(.[]; .name == $name) then
+          map(if .name == $name then selected else . end)
+        else . + [({name: $name} | selected)] end)
+        ' "$modDir/mod-list.json" > "$list_tmp"; then
+        rm -f -- "$list_tmp"
+        return 1
+      fi
+      mv -- "$list_tmp" "$modDir/mod-list.json"
+      echo "Enabled $name $actual_version"
+    }
+    mkdir -p "$modDir"
+    for key in "${!unofficialMods[@]}"; do
+      downloadUnofficial "${unofficialMods[$key]}" "$key"
+    done
+    if [ "${#officialMods[@]}" -gt 0 ]; then
+      USERNAME="${USERNAME:-$(cat /account/username)}"
+      TOKEN="${TOKEN:-$(cat /account/token)}"
+      if [ -z "$USERNAME" ] || [ -z "$TOKEN" ]; then
+        echo "Mod Portal downloads require a Factorio username and token" >&2
+        exit 1
+      fi
+      for officialMod in "${officialMods[@]}"; do
+        name=$(jq -r '.name' <<< "$officialMod")
+        requested_version=$(jq -r '.version // ""' <<< "$officialMod")
+        downloadofficial "$name" "$requested_version"
+      done
     fi
-
-
-
-
-
